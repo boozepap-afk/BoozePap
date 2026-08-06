@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #FFF5EC;
+  color: #002653;
+}
+
+.app-shell {
+  background: linear-gradient(180deg, #FFF5EC 0%, #ffffff 34rem);
+}
+
+.orange-gradient {
+  background: linear-gradient(180deg, #D81C10 0%, #E62E12 35%, #F45A16 70%, #FF6A1A 100%);
+}
+
+.brand-gradient {
+  background: linear-gradient(180deg, #D81C10 0%, #E62E12 35%, #F45A16 70%, #FF6A1A 100%);
+}
+
+.tile-shade {
+  background: linear-gradient(180deg, transparent 35%, rgba(0, 0, 0, .58) 100%);
+}
+
+.focus-ring:focus-visible {
+  outline: 3px solid rgba(255, 131, 31, .42);
+  outline-offset: 3px;
+}
+
+@keyframes cart-pulse {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(1.18) translateY(-2px); }
+  65% { transform: scale(.96); }
+}
+
+.cart-pulse {
+  animation: cart-pulse 520ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-pulse { animation: none; }
+}
+
+.product-rail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.product-rail-grid > :nth-child(n + 3) { display: none; }
+@media (min-width: 640px) {
+  .product-rail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .product-rail-grid > :nth-child(-n + 3) { display: block; }
+  .product-rail-grid > :nth-child(n + 4) { display: none; }
+}
+@media (min-width: 768px) {
+  .product-rail-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .product-rail-grid > :nth-child(-n + 5) { display: block; }
+  .product-rail-grid > :nth-child(n + 6) { display: none; }
+}
+@media (min-width: 1280px) {
+  .product-rail-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .product-rail-grid > :nth-child(n) { display: block; }
+}
+@keyframes brand-partnership-scroll {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
+
+.brand-partnership-ticker {
+  animation: brand-partnership-scroll 16s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-partnership-ticker { animation: none; text-align: center; }
+}

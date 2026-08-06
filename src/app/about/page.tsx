@@ -1,0 +1,9 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { breadcrumbSchema, JsonLd } from '@/lib/seo';
+import { getSiteContent } from '@/lib/supabase';
+
+const title = 'About Chupa Hub – Alcohol Delivery Nairobi';
+const description = 'Learn about Chupa Hub, our responsibly selected drinks catalogue and convenient alcohol delivery service across Nairobi.';
+export const metadata: Metadata = { title, description, alternates: { canonical: '/about' }, openGraph: { title: `${title} | Chupa Hub`, description, url: '/about', type: 'website' }, twitter: { card: 'summary', title: `${title} | Chupa Hub`, description } };
+export default async function AboutPage() { const content = await getSiteContent(); return <main className="mx-auto max-w-4xl px-4 py-10"><JsonLd data={[{ '@context': 'https://schema.org', '@type': 'AboutPage', name: title, description, url: 'https://chupahub.com/about' }, breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'About Chupa Hub', url: '/about' }])]}/><nav aria-label="Breadcrumb" className="mb-4 text-sm text-neutral-600"><Link href="/">Home</Link> / About Chupa Hub</nav><article className="rounded-3xl bg-white p-6 shadow-card sm:p-10"><p className="font-bold uppercase tracking-wide text-brand-orange">Chupa Hub</p><h1 className="mt-2 text-4xl font-black text-brand-ink">About Chupa Hub</h1><div className="mt-5 whitespace-pre-line leading-7 text-neutral-700">{content.about || 'Chupa Hub delivers a carefully selected range of drinks across Nairobi. We are committed to convenient, responsible service for customers aged 18 and over.'}</div><div className="mt-6 flex gap-3"><Link href="/shop" className="font-black text-brand-orange">Shop drinks</Link><Link href="/contact" className="font-black text-brand-orange">Contact us</Link></div></article></main>; }
