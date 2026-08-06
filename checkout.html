@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Chupa Hub</title><link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="checkout-page-body">
+<header class="checkout-top"><a class="logo" href="index.html">CHUPA<span>HUB</span></a><span class="secure-pill">🔒 Secure checkout</span></header>
+<main class="checkout-shell">
+  <section class="checkout-panel checkout-details">
+    <a class="back-link" href="index.html">← Back to shop</a>
+    <div class="checkout-intro"><div class="checkout-icon">🛵</div><div><h1>Your details</h1><p>To your door in <strong>~30 min</strong></p></div></div>
+    <form id="checkoutForm" class="checkout-form">
+      <label>Name<input name="name" placeholder="Full name" required></label>
+      <label>Phone <span>(so your rider can reach you)</span><input name="phone" placeholder="+2547..." required></label>
+      <label>Email for receipt<input name="email" type="email" placeholder="you@example.com"></label>
+      <label class="check-row"><input type="checkbox" name="company"> Paying as a company? <span>(for a VAT invoice)</span></label>
+      <div class="location-card">
+        <div class="location-head"><div><h2>Where to?</h2><p>Click the button to detect your live location or type your address.</p></div><button type="button" id="detectLocation">⌖ Use live location</button></div>
+        <label>Delivery address<input name="address" id="deliveryAddress" placeholder="Estate, building or street" required></label>
+        <div id="map" class="live-map"><span>📍 Live delivery map / GPS pin area</span></div>
+        <p id="locationMessage" class="muted">Allow location access to calculate delivery automatically.</p>
+      </div>
+      <button class="primary-btn full" type="submit">Place order</button>
+      <p id="checkoutMessage"></p>
+    </form>
+  </section>
+  <aside class="checkout-panel order-summary"><h2>Your order</h2><div id="checkoutItems"></div><div class="pay-group"><h3>Pay with</h3><label class="payment-option selected"><input type="radio" name="payment_method" value="mpesa" checked> 📱 <b>M-Pesa</b><small>Prompt sent to your phone.</small></label><label class="payment-option"><input type="radio" name="payment_method" value="card"> 💳 <b>Card</b><small>Visa / Mastercard.</small></label><label class="payment-option"><input type="radio" name="payment_method" value="cod"> 💵 <b>Cash on delivery</b><small>Pay when the rider arrives.</small></label></div><div class="cart-total"><span>Subtotal</span><strong id="checkoutSubtotal">KSh 0</strong></div><div class="cart-total"><span>Delivery</span><strong id="checkoutDelivery">KSh 0</strong></div><div class="cart-total grand"><span>Total</span><strong id="checkoutTotal">KSh 0</strong></div><section class="checkout-addons"><h3>Often added to this order</h3><p>Mixers, extras and last-minute party picks.</p><div id="checkoutSuggestions"></div></section></aside>
+</main>
+<script src="assets/js/config.js"></script><script src="assets/js/app.js"></script>
+</body></html>
