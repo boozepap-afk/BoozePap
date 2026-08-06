@@ -1,0 +1,1 @@
+{"require":{"php":"^8.3","firebase/php-jwt":"^6.10"},"autoload":{"psr-4":{"ChupaHub\\":"."}}}

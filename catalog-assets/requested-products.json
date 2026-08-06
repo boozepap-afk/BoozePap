@@ -1,0 +1,6 @@
+{
+  "imagePolicy": "Place only verified official manufacturer packshots in catalog-assets/images using the exact slug and a .jpg, .jpeg, .png, or .webp extension. Do not use retailer images, watermarked images, screenshots, or externally hosted image URLs.",
+  "products": [
+    "moet-chandon-nectar-imperial", "moet-chandon-imperial-brut", "moet-chandon-rose", "hennessy-vs", "tamnavulin-double-cask", "asconi-red-wine-16", "southern-comfort-lime", "jose-cuervo-gold", "glenfiddich-12-years", "glenfiddich-15-years", "glenfiddich-18-years", "grants-triple-wood", "jack-daniels-black", "jagermeister", "jameson-black-barrel", "jameson-ipa-edition", "jameson-whiskey", "jura-12-years", "monkey-shoulder", "glenbrynth-3yo", "glenbrynth-12yo-blended-malt", "glenbrynth-bourbon-cask-nas", "glenbrynth-sherry-cask-single-malt", "glenbrynth-rum-cask-single-malt", "glenbrynth-30yo", "glenbrynth-40yo"
+  ]
+}

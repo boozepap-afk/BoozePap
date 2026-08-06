@@ -1,0 +1,2 @@
+<?php
+return ['db'=>['host'=>getenv('DB_HOST')?:'localhost','name'=>getenv('DB_NAME')?:'chupahub','user'=>getenv('DB_USER')?:'root','pass'=>getenv('DB_PASS')?:'','charset'=>'utf8mb4'],'jwt_secret'=>getenv('JWT_SECRET')?:'change-this-256-bit-secret','cors'=>getenv('CORS_ORIGIN')?:'https://chupahub.com','mpesa'=>['consumer_key'=>getenv('MPESA_KEY')?:'','consumer_secret'=>getenv('MPESA_SECRET')?:'','shortcode'=>getenv('MPESA_SHORTCODE')?:'','passkey'=>getenv('MPESA_PASSKEY')?:'']];

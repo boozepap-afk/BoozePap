@@ -1,0 +1,1 @@
+USE chupahub;INSERT INTO categories(name,slug,icon) VALUES ('Whisky','whisky','🥃'),('Gin','gin','🍸'),('Wine','wine','🍷'),('Mixers','mixers','🥤');INSERT INTO brands(name,slug,country) VALUES('Jameson','jameson','Ireland'),('Tanqueray','tanqueray','United Kingdom'),('Schweppes','schweppes','Kenya');

@@ -1,0 +1,3 @@
+<?php
+namespace ChupaHub\Core;use PDO;
+final class Database{private PDO $pdo;public function __construct(array $c){$d=$c['db'];$this->pdo=new PDO("mysql:host={$d['host']};dbname={$d['name']};charset={$d['charset']}",$d['user'],$d['pass'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);}public function pdo():PDO{return $this->pdo;}public function query(string $sql,array $params=[]):array{$s=$this->pdo->prepare($sql);$s->execute($params);return $s->fetchAll();}public function execute(string $sql,array $params=[]):int{$s=$this->pdo->prepare($sql);$s->execute($params);return $s->rowCount();}}
