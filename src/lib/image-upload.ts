@@ -4,7 +4,7 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const RASTER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']);
 const HEIC_TYPES = new Set(['image/heic', 'image/heif']);
 
-type ProcessedImage = { full: File; thumbnail: File; previewUrl: string };
+type ProcessedImage = { full: File; thumbnail: File };
 
 function isSvg(bytes: Uint8Array) { return /<svg[\s>]/i.test(new TextDecoder().decode(bytes)); }
 function detectedType(bytes: Uint8Array) {
@@ -61,6 +61,6 @@ export async function processAdminImage(file: File): Promise<ProcessedImage> {
     const safeName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9-]+/gi, '-').toLowerCase() || 'image';
     const full = new File([fullBlob], `${safeName}.webp`, { type: 'image/webp' });
     const thumbnail = new File([thumbnailBlob], `${safeName}-thumb.webp`, { type: 'image/webp' });
-    return { full, thumbnail, previewUrl: URL.createObjectURL(fullBlob) };
+    return { full, thumbnail };
   } finally { bitmap.close(); }
 }
