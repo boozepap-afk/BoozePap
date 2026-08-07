@@ -1,4 +1,4 @@
-# Chupa Hub Supabase migrations and production audit
+# BoozePap Supabase migrations and production audit
 
 This is the single authoritative migration and production-verification document.
 It replaces the conflicting migration-order instructions previously split between

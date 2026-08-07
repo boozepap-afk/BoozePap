@@ -1,9 +1,9 @@
 {
-  "name": "ChupaHub",
-  "short_name": "ChupaHub",
-  "description": "Order genuine wines, whisky, gin, vodka, beer and other drinks online from ChupaHub. Enjoy fast, reliable alcohol delivery across Nairobi, 24/7.",
+  "name": "BoozePap",
+  "short_name": "BoozePap",
+  "description": "Order genuine wines, whisky, gin, vodka, beer and other drinks online from BoozePap. Enjoy fast, reliable alcohol delivery across Nairobi, 24/7.",
   "start_url": "/",
-  "icons": [{ "src": "/chupahub-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
+  "icons": [{ "src": "/boozepap-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
   "theme_color": "#F97316",
   "background_color": "#FFFFFF",
   "display": "standalone"
