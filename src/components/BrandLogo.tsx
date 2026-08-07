@@ -1,4 +1,4 @@
-const DEFAULT_LOGO_SRC = '/chupahub-logo.svg';
+const DEFAULT_LOGO_SRC = '/boozepap-logo.svg';
 
 export function BrandLogo({ footer = false, src = DEFAULT_LOGO_SRC }: { footer?: boolean; src?: string }) {
   return (
@@ -10,7 +10,7 @@ export function BrandLogo({ footer = false, src = DEFAULT_LOGO_SRC }: { footer?:
         className={footer ? 'h-16 w-10 object-contain' : 'h-12 w-8 object-contain sm:h-14 sm:w-9'}
       />
       <span className={footer ? 'text-2xl font-black text-white' : 'text-xl font-black text-white sm:text-2xl'}>
-        Chupa Hub
+        BoozePap
       </span>
     </div>
   );

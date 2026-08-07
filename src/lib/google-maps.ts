@@ -25,7 +25,7 @@ function logMapsError(error: GoogleMapsLoadError) {
 
   if (error.code === 'authentication') {
     console.error(
-      '[Google Maps] Authentication failed. Check that the API key is valid, billing is enabled, Maps JavaScript API and Places API (New) are enabled, and HTTP referer restrictions allow localhost, the Vercel preview URL, chupahub.com, and www.chupahub.com.',
+      '[Google Maps] Authentication failed. Check that the API key is valid, billing is enabled, Maps JavaScript API and Places API (New) are enabled, and HTTP referer restrictions allow localhost, the Vercel preview URL, boozepap.com, and www.boozepap.com.',
       error,
     );
     return;
