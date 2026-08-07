@@ -19,7 +19,7 @@ export function HeroCarousel({ banners, categories = [] }: { banners: DbBanner[]
   const featuredCategories = categories.filter(category => !category.parent_id).slice(0, 6);
   if (!slides.length) return <section className="mx-auto mt-5 max-w-[1380px] rounded-xl border border-dashed border-neutral-300 bg-white p-10 text-center shadow-sm"><h1 className="text-2xl font-black text-brand-ink">Welcome to BoozePap</h1><p className="mt-2 text-neutral-600">Publish three homepage banners in the admin to start the rotating hero.</p></section>;
   const move = (direction: number) => setCurrent(index => (index + direction + slides.length) % slides.length);
-  return <section className="mx-auto mt-4 max-w-[1440px] px-4 sm:px-6">
+  return <section className="mx-auto mt-4 max-w-[1280px] px-4 sm:px-6">
     <div className="mb-3 hidden items-center justify-between border-y border-neutral-200 bg-white px-2 py-2 text-[11px] font-bold text-neutral-700 sm:flex"><span>🚚 ≤ 30 min delivery</span><span>★ 4.6/5 rated</span><span>◷ Open 24/7</span><span>💳 M-Pesa, card or cash</span><span>✓ 100% genuine</span><Link href="/track-order" className="rounded-full border border-brand-orange px-3 py-1 text-brand-deep">Track your order</Link></div>
     <div className="grid items-stretch gap-4 md:grid-cols-[minmax(0,1.75fr)_minmax(310px,1fr)]">
     <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)} aria-roledescription="carousel" aria-label="BoozePap promotions" className="relative overflow-hidden rounded-xl bg-neutral-100 shadow-card">

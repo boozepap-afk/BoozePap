@@ -11,12 +11,12 @@ html {
 }
 
 body {
-  background: #F7F4EE;
+  background: #FFFFFF;
   color: #0B0B0B;
 }
 
 .app-shell {
-  background: linear-gradient(180deg, #F7F4EE 0%, #ffffff 36rem);
+  background: #FFFFFF;
 }
 
 .orange-gradient {
