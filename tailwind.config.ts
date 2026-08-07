@@ -6,14 +6,16 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          orange: '#FF5A00',
-          deep: '#002653',
-          soft: '#FFF5EC',
-          ink: '#002653',
+          orange: '#B11226',
+          deep: '#8B0000',
+          soft: '#F7F4EE',
+          ink: '#0B0B0B',
+          gold: '#C9A227',
+          lightGold: '#E2C15A',
         },
       },
       boxShadow: {
-        orange: '0 18px 45px rgba(240, 90, 26, .24)',
+        orange: '0 18px 45px rgba(177, 18, 38, .18)',
         card: '0 12px 28px rgba(33, 20, 15, .12)',
       },
     },
