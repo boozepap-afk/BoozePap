@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { CategoryGrid, Journal, ProductRail, SeoArticle } from '@/components/Site';
+import { Journal, ProductRail, SeoArticle } from '@/components/Site';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, money } from '@/lib/supabase';
 import { stableCollectionSlug } from '@/lib/public-urls';
@@ -44,15 +44,13 @@ export default async function Home() {
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>
-    <HeroCarousel banners={banners} />
+    <HeroCarousel banners={banners} categories={categories} />
     {promotions.length > 0 && <section className="mx-auto grid max-w-none gap-3 px-4 pt-5 md:grid-cols-2">
       {promotions.map((promotion) => <Link key={promotion.id} href={promotionHref(promotion)} className="orange-gradient flex items-center justify-between rounded-2xl p-5 text-white shadow-orange">
         <div><p className="text-xs font-black uppercase tracking-widest">{promotion.badge_text || promotion.code || 'Promotion'}</p><h2 className="text-2xl font-black">{promotion.title}</h2><p className="mt-1 text-sm text-white/85">{promotion.description}</p></div>
         <div className="ml-4 shrink-0 rounded-full bg-white px-4 py-3 text-center font-black text-brand-deep">{promotion.discount_type === 'percent' ? `${promotion.discount_value}%` : money(promotion.discount_value)}</div>
       </Link>)}
     </section>}
-    <section className="mx-auto max-w-[1440px] px-4 pt-8 sm:px-6"><span className="mb-2 block h-1 w-10 bg-brand-gold"/><h2 className="text-xl font-black text-brand-ink">Shop by Category</h2></section>
-    <CategoryGrid categories={categories.filter((category) => !category.parent_id)} />
     {sections.map((section, index) => <ProductRail key={`${section.title}-${index}`} {...section} />)}
     <Journal content={content} />
     <SeoArticle content={content} />
