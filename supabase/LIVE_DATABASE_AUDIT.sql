@@ -1,4 +1,4 @@
--- Chupa Hub production database audit
+-- BoozePap production database audit
 --
 -- Run this read-only script in the Supabase SQL editor against the intended
 -- production project. Do not run migration files manually to "check" them:

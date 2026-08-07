@@ -1,4 +1,4 @@
-# Chupa Hub migration conflict audit
+# BoozePap migration conflict audit
 
 ## The two overlapping schema uploads
 
