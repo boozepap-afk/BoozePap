@@ -1,1 +1,1 @@
-// Chupa Hub static storefront JavaScript now lives in assets/js/app.js.
+// BoozePap static storefront JavaScript now lives in assets/js/app.js.

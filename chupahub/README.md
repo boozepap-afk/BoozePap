@@ -1,6 +1,6 @@
-# Chupa Hub
+# BoozePap
 
-Chupa Hub is a Next.js storefront and authenticated admin dashboard backed exclusively by Supabase in production.
+BoozePap is a Next.js storefront and authenticated admin dashboard backed exclusively by Supabase in production.
 
 ## Production architecture
 
