@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://chupahub.com/sitemap.xml
+Sitemap: https://boozepap.com/sitemap.xml
