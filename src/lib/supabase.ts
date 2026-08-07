@@ -47,11 +47,11 @@ export function getSupabaseProjectRef() {
 }
 
 export async function getCategories(): Promise<DbCategory[]> {
-  return supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { resource: 'public categories' });
+  return supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
 }
 
 export async function getCategory(slug: string): Promise<DbCategory | null> {
-  const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { resource: 'public category' });
+  const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public category' });
   return rows[0] || null;
 }
 
@@ -66,13 +66,13 @@ export async function getBanners(): Promise<DbBanner[]> {
 }
 
 export async function getPromotions(): Promise<DbPromotion[]> {
-  const rows = await supabaseFetch<DbPromotion & { starts_at?: string; ends_at?: string }>('promotions?select=*&is_active=eq.true&order=sort_order.asc,created_at.desc', { resource: 'public promotions' });
+  const rows = await supabaseFetch<DbPromotion & { starts_at?: string; ends_at?: string }>('promotions?select=*&is_active=eq.true&order=sort_order.asc,created_at.desc', { cache: 'no-store', resource: 'public promotions' });
   const now = Date.now();
   return rows.filter((row) => (!row.starts_at || Date.parse(row.starts_at) <= now) && (!row.ends_at || Date.parse(row.ends_at) >= now));
 }
 
 export async function getDeliverySettings(): Promise<DbDeliverySetting[]> {
-  return supabaseFetch<DbDeliverySetting>('delivery_settings?select=*&is_active=eq.true&order=sort_order.asc', { resource: 'public delivery settings' });
+  return supabaseFetch<DbDeliverySetting>('delivery_settings?select=*&is_active=eq.true&order=sort_order.asc', { cache: 'no-store', resource: 'public delivery settings' });
 }
 
 export type CheckoutSettings = {
@@ -81,7 +81,7 @@ export type CheckoutSettings = {
   delivery_address_label?: string; gift_notes_enabled?: boolean; coupons_enabled?: boolean; contact_phone?: string;
 };
 export async function getCheckoutSettings(): Promise<CheckoutSettings> {
-  const rows = await supabaseFetch<{ value: CheckoutSettings }>('store_settings?select=value&key=eq.checkout&is_public=eq.true&limit=1', { resource: 'public checkout settings' });
+  const rows = await supabaseFetch<{ value: CheckoutSettings }>('store_settings?select=value&key=eq.checkout&is_public=eq.true&limit=1', { cache: 'no-store', resource: 'public checkout settings' });
   return rows[0]?.value || {};
 }
 
@@ -99,11 +99,11 @@ export async function getHomepageSection(id: string): Promise<DbHomepageSection 
 }
 
 export async function getProductsByCategory(slug: string): Promise<DbProduct[]> {
-  return supabaseFetch<DbProduct>(`products?select=*,categories!inner(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&categories.slug=eq.${encodeURIComponent(slug)}&order=sort_order.asc,created_at.desc`, { resource: 'public products by category' });
+  return supabaseFetch<DbProduct>(`products?select=*,categories!inner(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&categories.slug=eq.${encodeURIComponent(slug)}&order=sort_order.asc,created_at.desc`, { cache: 'no-store', resource: 'public products by category' });
 }
 
 export async function getProduct(slug: string): Promise<DbProduct | null> {
-  const rows = await supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { resource: 'public product detail' });
+  const rows = await supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public product detail' });
   return rows[0] || null;
 }
 
@@ -150,7 +150,7 @@ function customerFacingBoozePapContent(content: SiteContent): SiteContent {
 }
 
 export async function getSiteContent(): Promise<SiteContent> {
-  const rows = await supabaseFetch<{ value: SiteContent }>('store_settings?select=value&key=eq.site_content&is_public=eq.true&limit=1', { resource: 'public website settings' });
+  const rows = await supabaseFetch<{ value: SiteContent }>('store_settings?select=value&key=eq.site_content&is_public=eq.true&limit=1', { cache: 'no-store', resource: 'public website settings' });
   return customerFacingBoozePapContent(rows[0]?.value || {});
 }
 

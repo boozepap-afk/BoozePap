@@ -48,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
   return {
     ...baseMetadata,
-    openGraph: { ...baseMetadata.openGraph, images: [{ url: '/boozepap-logo.svg', alt: 'BoozePap logo' }] },
+    openGraph: { ...baseMetadata.openGraph, images: [{ url: content.logo_url || '/boozepap-logo.svg', alt: 'BoozePap logo' }] },
   };
 }
 
@@ -60,7 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="app-shell min-h-screen">
         <AgeVerification />
         <CartFeedback />
-        <JsonLd data={businessGraph([content.instagram_url || '', content.facebook_url || '', content.tiktok_url || ''])} />
+        <JsonLd data={businessGraph([content.instagram_url || '', content.facebook_url || '', content.tiktok_url || ''], content.logo_url)} />
         <SiteChrome content={content} products={products}>{children}</SiteChrome>
       </body>
     </html>
