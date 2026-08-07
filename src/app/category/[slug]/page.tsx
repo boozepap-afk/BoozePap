@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const category = await getCategory(slug);
   const name = category?.name || slug.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
   const title = category?.seo_title || `${name} Delivery Nairobi – Order Online`;
-  const description = truncate(category?.seo_description || plainText(category?.description) || `Order ${name.toLowerCase()} online from Chupa Hub with fast, reliable ${name.toLowerCase()} delivery across Nairobi.`);
+  const description = truncate(category?.seo_description || plainText(category?.description) || `Order ${name.toLowerCase()} online from BoozePap with fast, reliable ${name.toLowerCase()} delivery across Nairobi.`);
   const url = categoryCanonicalPath(slug);
   return {
     title, description, alternates: { canonical: url },
     keywords: [`${name} Delivery Nairobi`, `${name} online Nairobi`, 'Alcohol Delivery Nairobi', 'Liquor Delivery Nairobi'],
-    openGraph: { title: `${title} | Chupa Hub`, description, url, type: 'website', images: category?.image_url ? [{ url: category.image_url, alt: `${name} delivery Nairobi` }] : undefined },
-    twitter: { card: category?.image_url ? 'summary_large_image' : 'summary', title: `${title} | Chupa Hub`, description, images: category?.image_url ? [category.image_url] : undefined },
+    openGraph: { title: `${title} | BoozePap`, description, url, type: 'website', images: category?.image_url ? [{ url: category.image_url, alt: `${name} delivery Nairobi` }] : undefined },
+    twitter: { card: category?.image_url ? 'summary_large_image' : 'summary', title: `${title} | BoozePap`, description, images: category?.image_url ? [category.image_url] : undefined },
   };
 }
 
