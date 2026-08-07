@@ -9,6 +9,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { stableCollectionSlug } from '@/lib/public-urls';
 import type { SiteContent } from '@/lib/supabase';
 import { defaultBrandPartners, type BrandPartner } from '@/lib/brand-partners';
+import { getCurrentAdmin } from '@/lib/admin-auth';
 
 type Category = { id: string; name: string; slug: string; image_url?: string; is_active: boolean };
 type Product = { id: string; name: string; slug: string; description?: string; tasting_notes?: string; pairing_suggestions?: string; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string; stock?: number; low_stock_threshold?: number; image_url?: string; gallery_urls?: string[]; abv?: number; price: number; category_id?: string; is_active: boolean; categories?: { name: string }[] | { name: string } | null };
@@ -33,8 +34,8 @@ export default function AdminPage() {
       const { data: { session } } = await supabase.auth.getSession();
       setSignedIn(Boolean(session));
       if (!session) { setAllowed(false); return; }
-      const { data, error: accessError } = await supabase.rpc('current_admin');
-      setAllowed(!accessError && Boolean(Array.isArray(data) ? data[0] : data));
+      const { admin, error: accessError } = await getCurrentAdmin(supabase);
+      setAllowed(!accessError && Boolean(admin));
       if (accessError) setError(`Admin access could not be verified: ${accessError.message}`);
     } catch (cause) {
       setAllowed(false);

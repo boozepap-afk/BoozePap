@@ -5,6 +5,7 @@ import { Bell, Check, RefreshCw, Volume2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase-browser';
 import { money } from '@/lib/supabase';
+import { getCurrentAdmin } from '@/lib/admin-auth';
 
 type Order = {
   id: string; order_number?: string; created_at: string; updated_at?: string;
@@ -36,8 +37,8 @@ export default function OrdersPage() {
     foreground ? setRefreshing(true) : undefined;
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) { setError('Sign in as an administrator to view orders.'); setLoading(false); setRefreshing(false); return; }
-    const { data: admin } = await supabase.rpc('current_admin');
-    if (!admin) { setError('Administrator access required.'); setLoading(false); setRefreshing(false); return; }
+    const { admin, error: accessError } = await getCurrentAdmin(supabase);
+    if (accessError || !admin) { setError(accessError?.message || 'Administrator access required.'); setLoading(false); setRefreshing(false); return; }
     const { data, error: requestError } = await supabase.from('orders').select('id,order_number,created_at,updated_at,customer_name,customer_phone,delivery_address,payment_method,payment_status,delivery_fee,total,status,delivery_location_verified,order_items(count)').order('created_at', { ascending: false }).limit(250);
     if (requestError) setError(requestError.message); else { setOrders((data || []) as Order[]); setError(''); setLastRefreshed(new Date()); }
     setLoading(false); setRefreshing(false);
