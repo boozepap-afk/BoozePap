@@ -21,7 +21,7 @@ type SupabaseFetchOptions = { cache?: RequestCache; resource?: string };
 
 async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}): Promise<T[]> {
   if (!hasSupabaseConfig) {
-    console.error('[Chupa Hub Supabase] Configuration is missing; returning an empty public result.', { resource: options.resource || path });
+    console.error('[BoozePap Supabase] Configuration is missing; returning an empty public result.', { resource: options.resource || path });
     return [];
   }
   try {
@@ -32,12 +32,12 @@ async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}
     if (!response.ok) {
       const details = (await response.text()).slice(0, 1000);
       const error = new Error(`Supabase ${options.resource || 'request'} failed with HTTP ${response.status}: ${details}`);
-      console.error('[Chupa Hub Supabase]', error.message, { path, project: getSupabaseProjectRef() });
+      console.error('[BoozePap Supabase]', error.message, { path, project: getSupabaseProjectRef() });
       return [];
     }
     return response.json();
   } catch (error) {
-    console.error(`[Chupa Hub Supabase] ${options.resource || 'request'} failed`, { path, project: getSupabaseProjectRef(), error });
+    console.error(`[BoozePap Supabase] ${options.resource || 'request'} failed`, { path, project: getSupabaseProjectRef(), error });
     return [];
   }
 }
@@ -61,7 +61,7 @@ export async function getBanners(): Promise<DbBanner[]> {
   });
   const now = Date.now();
   const activeRows = rows.filter((row) => (!row.starts_at || Date.parse(row.starts_at) <= now) && (!row.ends_at || Date.parse(row.ends_at) >= now));
-  console.info('[Chupa Hub banners] Supabase synchronization complete', { project: getSupabaseProjectRef(), fetched: rows.length, visible: activeRows.length });
+  console.info('[BoozePap banners] Supabase synchronization complete', { project: getSupabaseProjectRef(), fetched: rows.length, visible: activeRows.length });
   return activeRows;
 }
 
@@ -136,9 +136,22 @@ export type SiteContent = {
   articles?: Array<{ id: string; title: string; summary: string; body: string; is_active: boolean }>;
   brand_partners?: Array<{ id: string; name: string; image_url: string }>;
 };
+
+function customerFacingBoozePapContent(content: SiteContent): SiteContent {
+  const rebrand = (value?: string) => value?.replace(/Chupa\s*Hub/gi, 'BoozePap');
+  return {
+    ...content,
+    about: rebrand(content.about), privacy: rebrand(content.privacy), terms: rebrand(content.terms),
+    header_notice: rebrand(content.header_notice), footer_text: rebrand(content.footer_text), copyright_text: rebrand(content.copyright_text),
+    journal_title: rebrand(content.journal_title), journal_intro: rebrand(content.journal_intro),
+    article_title: rebrand(content.article_title), article_summary: rebrand(content.article_summary), article_body: rebrand(content.article_body),
+    articles: content.articles?.map(article => ({ ...article, title: rebrand(article.title) || '', summary: rebrand(article.summary) || '', body: rebrand(article.body) || '' })),
+  };
+}
+
 export async function getSiteContent(): Promise<SiteContent> {
   const rows = await supabaseFetch<{ value: SiteContent }>('store_settings?select=value&key=eq.site_content&is_public=eq.true&limit=1', { resource: 'public website settings' });
-  return rows[0]?.value || {};
+  return customerFacingBoozePapContent(rows[0]?.value || {});
 }
 
 export const money = (value: number) => `KES ${Number(value).toLocaleString('en-KE')}`;
