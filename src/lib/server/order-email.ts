@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deliverEmail } from '@/lib/server/resend-email';
 
-const SITE_URL = 'https://chupahub.com';
+const SITE_URL = 'https://boozepap.com';
 const MAX_ATTEMPTS = 3;
 
 export type OrderEmailEvent = 'placed' | 'accepted' | 'preparing' | 'dispatched' | 'delivered' | 'cancelled' | 'new_order_admin';
@@ -24,12 +24,12 @@ export type EmailOrder = {
 
 const eventCopy: Record<OrderEmailEvent, { subject: (number: string) => string; heading: string; message: string }> = {
   placed: { subject: number => `Order ${number} received`, heading: 'Thanks for your order', message: 'We received your order and will update you as it moves through delivery.' },
-  accepted: { subject: number => `Order ${number} accepted`, heading: 'Your order is accepted', message: 'The Chupa Hub team has accepted your order.' },
+  accepted: { subject: number => `Order ${number} accepted`, heading: 'Your order is accepted', message: 'The BoozePap team has accepted your order.' },
   preparing: { subject: number => `Order ${number} is being prepared`, heading: 'We are preparing your order', message: 'Your items are being packed and checked for dispatch.' },
-  dispatched: { subject: number => `Order ${number} is on the way`, heading: 'Your rider is on the way', message: 'Your order has left Chupa Hub and is heading to you.' },
-  delivered: { subject: number => `Order ${number} delivered`, heading: 'Your order was delivered', message: 'Thank you for choosing Chupa Hub. We hope you enjoy your order responsibly.' },
-  cancelled: { subject: number => `Order ${number} cancelled`, heading: 'Your order was cancelled', message: 'Your order has been cancelled. Contact Chupa Hub customer care if you need help.' },
-  new_order_admin: { subject: number => `New Chupa Hub order ${number}`, heading: 'New order placed', message: 'A new customer order needs attention.' },
+  dispatched: { subject: number => `Order ${number} is on the way`, heading: 'Your rider is on the way', message: 'Your order has left BoozePap and is heading to you.' },
+  delivered: { subject: number => `Order ${number} delivered`, heading: 'Your order was delivered', message: 'Thank you for choosing BoozePap. We hope you enjoy your order responsibly.' },
+  cancelled: { subject: number => `Order ${number} cancelled`, heading: 'Your order was cancelled', message: 'Your order has been cancelled. Contact BoozePap customer care if you need help.' },
+  new_order_admin: { subject: number => `New BoozePap order ${number}`, heading: 'New order placed', message: 'A new customer order needs attention.' },
 };
 
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]!);
