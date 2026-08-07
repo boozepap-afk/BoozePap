@@ -1,6 +1,6 @@
 const DEFAULT_LOGO_SRC = '/boozepap-logo.svg';
 
-export function BrandLogo({ footer = false, src = DEFAULT_LOGO_SRC }: { footer?: boolean; src?: string }) {
+export function BrandLogo({ footer = false }: { footer?: boolean; src?: string }) {
   return (
     <div className="flex shrink-0 items-center text-left">
       <img
