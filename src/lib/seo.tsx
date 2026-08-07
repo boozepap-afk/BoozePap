@@ -1,6 +1,6 @@
-export const SITE_URL = 'https://chupahub.com';
-export const SITE_NAME = 'ChupaHub';
-export const DEFAULT_DESCRIPTION = 'Order genuine wines, whisky, gin, vodka, beer and other drinks online from ChupaHub. Enjoy fast, reliable alcohol delivery across Nairobi, 24/7.';
+export const SITE_URL = 'https://boozepap.com';
+export const SITE_NAME = 'BoozePap';
+export const DEFAULT_DESCRIPTION = 'Order genuine wines, whisky, gin, vodka, beer and other drinks online from BoozePap. Enjoy fast, reliable alcohol delivery across Nairobi, 24/7.';
 
 export function absoluteUrl(path = '/') {
   return new URL(path, SITE_URL).toString();
@@ -20,7 +20,7 @@ export function JsonLd({ data }: { data: Record<string, unknown> | Array<Record<
 }
 
 export function businessGraph(socialLinks: string[] = [], logoUrl?: string) {
-  const searchLogo = logoUrl || absoluteUrl('/chupahub-logo.svg');
+  const searchLogo = logoUrl || absoluteUrl('/boozepap-logo.svg');
   return {
   '@context': 'https://schema.org',
   '@graph': [

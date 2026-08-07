@@ -9,11 +9,11 @@ import { DEFAULT_DESCRIPTION } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const metadata: Metadata = {
-  title: { absolute: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi' },
+  title: { absolute: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi' },
   description: DEFAULT_DESCRIPTION,
-  alternates: { canonical: 'https://chupahub.com/' },
-  openGraph: { title: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION, url: 'https://chupahub.com/', siteName: 'ChupaHub', type: 'website', images: [{ url: '/chupahub-logo.svg', alt: 'ChupaHub logo' }] },
-  twitter: { card: 'summary', title: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION, images: ['/chupahub-logo.svg'] },
+  alternates: { canonical: 'https://boozepap.com/' },
+  openGraph: { title: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION, url: 'https://boozepap.com/', siteName: 'BoozePap', type: 'website', images: [{ url: '/boozepap-logo.svg', alt: 'BoozePap logo' }] },
+  twitter: { card: 'summary', title: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION, images: ['/boozepap-logo.svg'] },
 };
 
 export default async function Home() {

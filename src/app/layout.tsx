@@ -8,8 +8,8 @@ import { businessGraph, DEFAULT_DESCRIPTION, JsonLd, SITE_NAME, SITE_URL } from 
 const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi',
-    template: '%s | ChupaHub',
+    default: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi',
+    template: '%s | BoozePap',
   },
   description: DEFAULT_DESCRIPTION,
   applicationName: SITE_NAME,
@@ -29,15 +29,15 @@ const baseMetadata: Metadata = {
   ],
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi',
+    title: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi',
     description: DEFAULT_DESCRIPTION,
     type: 'website', url: SITE_URL, siteName: SITE_NAME, locale: 'en_KE',
   },
-  twitter: { card: 'summary', title: 'ChupaHub | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION },
+  twitter: { card: 'summary', title: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION },
   icons: {
-    icon: [{ url: '/chupahub-logo.svg', type: 'image/svg+xml', sizes: 'any' }],
-    shortcut: '/chupahub-logo.svg',
-    apple: [{ url: '/chupahub-logo.svg', type: 'image/svg+xml', sizes: 'any' }],
+    icon: [{ url: '/boozepap-logo.svg', type: 'image/svg+xml', sizes: 'any' }],
+    shortcut: '/boozepap-logo.svg',
+    apple: [{ url: '/boozepap-logo.svg', type: 'image/svg+xml', sizes: 'any' }],
   },
   manifest: '/site.webmanifest',
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
   return {
     ...baseMetadata,
-    openGraph: { ...baseMetadata.openGraph, images: [{ url: content.logo_url || '/chupahub-logo.svg', alt: 'ChupaHub logo' }] },
+    openGraph: { ...baseMetadata.openGraph, images: [{ url: content.logo_url || '/boozepap-logo.svg', alt: 'BoozePap logo' }] },
   };
 }
 

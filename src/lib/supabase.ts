@@ -21,7 +21,7 @@ type SupabaseFetchOptions = { cache?: RequestCache; resource?: string };
 
 async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}): Promise<T[]> {
   if (!hasSupabaseConfig) {
-    console.error('[Chupa Hub Supabase] Configuration is missing; returning an empty public result.', { resource: options.resource || path });
+    console.error('[BoozePap Supabase] Configuration is missing; returning an empty public result.', { resource: options.resource || path });
     return [];
   }
   try {
@@ -32,12 +32,12 @@ async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}
     if (!response.ok) {
       const details = (await response.text()).slice(0, 1000);
       const error = new Error(`Supabase ${options.resource || 'request'} failed with HTTP ${response.status}: ${details}`);
-      console.error('[Chupa Hub Supabase]', error.message, { path, project: getSupabaseProjectRef() });
+      console.error('[BoozePap Supabase]', error.message, { path, project: getSupabaseProjectRef() });
       return [];
     }
     return response.json();
   } catch (error) {
-    console.error(`[Chupa Hub Supabase] ${options.resource || 'request'} failed`, { path, project: getSupabaseProjectRef(), error });
+    console.error(`[BoozePap Supabase] ${options.resource || 'request'} failed`, { path, project: getSupabaseProjectRef(), error });
     return [];
   }
 }
@@ -61,7 +61,7 @@ export async function getBanners(): Promise<DbBanner[]> {
   });
   const now = Date.now();
   const activeRows = rows.filter((row) => (!row.starts_at || Date.parse(row.starts_at) <= now) && (!row.ends_at || Date.parse(row.ends_at) >= now));
-  console.info('[Chupa Hub banners] Supabase synchronization complete', { project: getSupabaseProjectRef(), fetched: rows.length, visible: activeRows.length });
+  console.info('[BoozePap banners] Supabase synchronization complete', { project: getSupabaseProjectRef(), fetched: rows.length, visible: activeRows.length });
   return activeRows;
 }
 

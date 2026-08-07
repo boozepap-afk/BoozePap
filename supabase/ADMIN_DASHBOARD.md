@@ -1,8 +1,8 @@
-# Chupa Hub admin dashboard
+# BoozePap admin dashboard
 
 The production admin dashboard lives inside the existing Next.js storefront, not in a second Vercel project:
 
-- Production URL: `https://www.chupahub.com/admin`
+- Production URL: `https://www.boozepap.com/admin`
 - Local URL: `http://localhost:3000/admin`
 
 ## Vercel project routing
@@ -12,7 +12,7 @@ Next.js framework detection without custom routing for `/_next/static` assets.
 
 ## Required Vercel environment variables
 
-Set these variables on the existing Vercel project connected to `www.chupahub.com`:
+Set these variables on the existing Vercel project connected to `www.boozepap.com`:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
