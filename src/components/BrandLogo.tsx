@@ -1,17 +1,17 @@
-const DEFAULT_LOGO_SRC = '/chupahub-logo.svg';
+const DEFAULT_LOGO_SRC = '/boozepap-logo.svg';
 
-export function BrandLogo({ footer = false, src = DEFAULT_LOGO_SRC }: { footer?: boolean; src?: string }) {
+type BrandLogoProps = { footer?: boolean; src?: string };
+
+export function BrandLogo({ footer = false, src }: BrandLogoProps) {
+  const resolvedSrc = src || DEFAULT_LOGO_SRC;
+
   return (
-    <div className="flex shrink-0 items-center gap-1 text-left">
+    <div className="flex shrink-0 items-center text-left">
       <img
-        src={src || DEFAULT_LOGO_SRC}
-        alt=""
-        aria-hidden="true"
-        className={footer ? 'h-16 w-10 object-contain' : 'h-12 w-8 object-contain sm:h-14 sm:w-9'}
+        src={resolvedSrc}
+        alt="BoozePap"
+        className={footer ? 'h-24 w-auto max-w-full object-contain' : 'h-14 w-auto max-w-[190px] object-contain sm:h-16 sm:max-w-[230px]'}
       />
-      <span className={footer ? 'text-2xl font-black text-white' : 'text-xl font-black text-white sm:text-2xl'}>
-        Chupa Hub
-      </span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# Chupa Hub payment, authentication, and notification configuration
+# BoozePap payment, authentication, and notification configuration
 
 ## Before enabling checkout
 
@@ -22,14 +22,14 @@ The checkout server recalculates item prices and stock from Supabase and calcula
 
 ## Authentication
 
-In Supabase Auth, enable Email and Google, set the **Site URL** to `https://chupahub.com`, and add these redirect URLs to the Auth configuration:
+In Supabase Auth, enable Email and Google, set the **Site URL** to `https://boozepap.com`, and add these redirect URLs to the Auth configuration:
 
-- `https://chupahub.com/auth/callback`
-- `https://www.chupahub.com/auth/callback`
+- `https://boozepap.com/auth/callback`
+- `https://www.boozepap.com/auth/callback`
 - `https://*.vercel.app/auth/callback`
 - `http://localhost:3000/auth/callback` (development only)
 
-Create the Google OAuth client in Google Cloud Console and use **Supabase's provider callback URL** as its authorized redirect URI: `https://zoiafygddwqwjqvaahtb.supabase.co/auth/v1/callback`. Do not add a Chupa Hub `/auth/callback` URL to Google Cloud; those application callback URLs belong in Supabase's redirect allow list. Place the Google client ID and secret only in the Supabase Google provider settings.
+Create the Google OAuth client in Google Cloud Console and use **Supabase's provider callback URL** as its authorized redirect URI: `https://zoiafygddwqwjqvaahtb.supabase.co/auth/v1/callback`. Do not add a BoozePap `/auth/callback` URL to Google Cloud; those application callback URLs belong in Supabase's redirect allow list. Place the Google client ID and secret only in the Supabase Google provider settings.
 
 Vercel's `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` must both belong to that same Supabase project. Remove old credentials from every Vercel environment before redeploying. Never expose the service-role key in a `NEXT_PUBLIC_` variable.
 
@@ -41,4 +41,4 @@ No SMS, WhatsApp, or email credentials are included in this repository. Until a 
 
 ## Google Maps delivery search
 
-Create a browser API key in Google Cloud Console and enable **Maps JavaScript API**, **Places API (New)**, and **Geocoding API**. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Vercel. Restrict the key to HTTP referrers for the exact Chupa Hub production domain, approved Vercel preview domains, and `http://localhost:3000/*` only when developing. Apply API restrictions so the key can call only those three APIs. The key is intentionally browser-visible; its referrer and API restrictions are mandatory. Checkout stores the selected Google Place ID, place name, formatted address, coordinates, and verification state. Manual fallback orders are visibly stored as unverified.
+Create a browser API key in Google Cloud Console and enable **Maps JavaScript API**, **Places API (New)**, and **Geocoding API**. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Vercel. Restrict the key to HTTP referrers for the exact BoozePap production domain, approved Vercel preview domains, and `http://localhost:3000/*` only when developing. Apply API restrictions so the key can call only those three APIs. The key is intentionally browser-visible; its referrer and API restrictions are mandatory. Checkout stores the selected Google Place ID, place name, formatted address, coordinates, and verification state. Manual fallback orders are visibly stored as unverified.
