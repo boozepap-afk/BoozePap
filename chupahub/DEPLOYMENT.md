@@ -1,4 +1,4 @@
-# Chupa Hub deployment checklist
+# BoozePap deployment checklist
 
 ## 1. Audit and apply Supabase migrations
 
