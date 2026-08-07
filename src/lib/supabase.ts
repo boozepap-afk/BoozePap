@@ -136,9 +136,22 @@ export type SiteContent = {
   articles?: Array<{ id: string; title: string; summary: string; body: string; is_active: boolean }>;
   brand_partners?: Array<{ id: string; name: string; image_url: string }>;
 };
+
+function customerFacingBoozePapContent(content: SiteContent): SiteContent {
+  const rebrand = (value?: string) => value?.replace(/Chupa\s*Hub/gi, 'BoozePap');
+  return {
+    ...content,
+    about: rebrand(content.about), privacy: rebrand(content.privacy), terms: rebrand(content.terms),
+    header_notice: rebrand(content.header_notice), footer_text: rebrand(content.footer_text), copyright_text: rebrand(content.copyright_text),
+    journal_title: rebrand(content.journal_title), journal_intro: rebrand(content.journal_intro),
+    article_title: rebrand(content.article_title), article_summary: rebrand(content.article_summary), article_body: rebrand(content.article_body),
+    articles: content.articles?.map(article => ({ ...article, title: rebrand(article.title) || '', summary: rebrand(article.summary) || '', body: rebrand(article.body) || '' })),
+  };
+}
+
 export async function getSiteContent(): Promise<SiteContent> {
   const rows = await supabaseFetch<{ value: SiteContent }>('store_settings?select=value&key=eq.site_content&is_public=eq.true&limit=1', { resource: 'public website settings' });
-  return rows[0]?.value || {};
+  return customerFacingBoozePapContent(rows[0]?.value || {});
 }
 
 export const money = (value: number) => `KES ${Number(value).toLocaleString('en-KE')}`;

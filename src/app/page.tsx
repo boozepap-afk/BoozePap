@@ -23,6 +23,7 @@ export default async function Home() {
   const topSellers = products.filter((product) => product.is_top_seller);
   const arrivals = products.filter((product) => product.is_new_arrival).sort((a, b) => Date.parse(b.updated_at || '') - Date.parse(a.updated_at || ''));
   const featured = products.filter((product) => product.is_featured);
+  const wines = products.filter((product) => product.categories?.slug === 'wine');
   const sections = (configuredSections.length ? configuredSections.map(section => {
     const heading = section.heading.toLowerCase();
     const selected = section.product_ids?.length
@@ -33,7 +34,13 @@ export default async function Home() {
       : section.category_id ? products.filter(product => product.categories?.slug === section.categories?.slug)
       : products;
     return { title: section.heading, products: selected, href: `/collections/${stableCollectionSlug(section) || 'featured'}`, limit: section.item_limit };
-  }) : [{ title: 'Top Deals', products: featured, href: '/collections/featured', limit: 8 }, { title: 'Top Sellers', products: topSellers, href: '/collections/top-sellers', limit: 8 }, { title: 'New Arrivals', products: arrivals, href: '/collections/new-arrivals', limit: 8 }]).sort((a, b) => sectionPriority(a.title) - sectionPriority(b.title));
+  }) : [
+    { title: 'Deals', products: featured, href: '/offers', limit: 8 },
+    { title: 'Top Sellers', products: topSellers, href: '/collections/top-sellers', limit: 8 },
+    { title: 'Wines We Love', products: wines, href: '/wine', limit: 8 },
+    { title: 'New Arrivals', products: arrivals, href: '/collections/new-arrivals', limit: 8 },
+    { title: 'Featured Products', products: featured, href: '/collections/featured', limit: 8 },
+  ]).sort((a, b) => sectionPriority(a.title) - sectionPriority(b.title));
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>
@@ -44,6 +51,7 @@ export default async function Home() {
         <div className="ml-4 shrink-0 rounded-full bg-white px-4 py-3 text-center font-black text-brand-deep">{promotion.discount_type === 'percent' ? `${promotion.discount_value}%` : money(promotion.discount_value)}</div>
       </Link>)}
     </section>}
+    <section className="mx-auto max-w-[1440px] px-4 pt-8 sm:px-6"><span className="mb-2 block h-1 w-10 bg-brand-gold"/><h2 className="text-xl font-black text-brand-ink">Shop by Category</h2></section>
     <CategoryGrid categories={categories.filter((category) => !category.parent_id)} />
     {sections.map((section, index) => <ProductRail key={`${section.title}-${index}`} {...section} />)}
     <Journal content={content} />
