@@ -8,7 +8,7 @@ export function BrandLogo({ footer = false, src }: BrandLogoProps) {
   return (
     <div className="flex shrink-0 items-center text-left">
       <img
-        src={resolvedSrc}
+        src={src || DEFAULT_LOGO_SRC}
         alt="BoozePap"
         className={footer ? 'h-24 w-auto max-w-full object-contain' : 'h-14 w-auto max-w-[190px] object-contain sm:h-16 sm:max-w-[230px]'}
       />
