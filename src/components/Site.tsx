@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Heart, MapPin as MapPinIcon, Menu, MessageCircle, Search, ShoppingBag, UserCircle, X } from 'lucide-react';
 import { DbCategory, DbProduct, effectivePrice, imageFor, money, SiteContent } from '@/lib/supabase';
+import { categoryImageFor } from '@/lib/category-images';
 import { readCart, writeCart } from '@/lib/cart';
 import { BrandLogo } from '@/components/BrandLogo';
 import { SmartImage } from '@/components/SmartImage';
@@ -32,8 +33,8 @@ export function Header({ content = {}, products = [] }: { content?: SiteContent;
   useEffect(() => { refresh(); window.addEventListener('chupahub-cart-updated', refresh); window.addEventListener('chupahub-location-updated', refresh); return () => { window.removeEventListener('chupahub-cart-updated', refresh); window.removeEventListener('chupahub-location-updated', refresh); }; }, []);
   const primaryLinks = [['Shop','/shop'],['Beer','/beer'],['Wine','/wine'],['Whisky','/whisky'],['Gin','/gin'],['Vodka','/vodka'],['Offers','/offers'],['Track Order','/track-order'],['Contact','/contact']];
   const suggestions = query.trim().length < 1 ? [] : products.map(product => ({ product, score: searchScore(product, query) })).filter(result => result.score >= 0).sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name)).slice(0, 6).map(result => result.product);
-  return <header className="sticky top-0 z-40 bg-brand-ink text-white shadow-lg">
-    <div className="bg-brand-deep px-3 py-2 text-center text-[11px] font-bold tracking-wide text-white sm:flex sm:justify-between sm:px-6"><span>{content.header_notice || 'FREE DELIVERY ON ORDERS OF KES 10,000 OR MORE'}</span><span className="hidden sm:inline">Fast Nairobi delivery · Drink responsibly — 18+ only</span></div>
+  return <header className="sticky top-0 z-40 bg-[linear-gradient(110deg,#050505_0%,#11100b_58%,#4d3a08_100%)] text-white shadow-lg">
+    <div className="border-b border-brand-gold/35 bg-transparent px-3 py-2 text-center text-[11px] font-bold tracking-wide text-brand-lightGold sm:flex sm:justify-between sm:px-6"><span>{content.header_notice || 'FREE DELIVERY ON ORDERS OF KES 10,000 OR MORE'}</span><span className="hidden sm:inline">Fast Nairobi delivery · Drink responsibly — 18+ only</span></div>
     <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-3 px-3 py-2 sm:px-6">
       <button type="button" onClick={()=>setMenuOpen(value=>!value)} className="grid h-10 w-10 place-items-center rounded-lg border border-white/20 lg:hidden" aria-label="Toggle navigation">{menuOpen?<X size={21}/>:<Menu size={21}/>}</button>
       <Link href="/" className="flex shrink-0 items-center" aria-label="BoozePap home"><BrandLogo src={content.logo_url} /></Link>
@@ -41,7 +42,7 @@ export function Header({ content = {}, products = [] }: { content?: SiteContent;
       <Link href="/checkout" className="hidden max-w-40 truncate text-xs font-bold text-white/80 xl:block"><MapPinIcon className="mr-1 inline text-brand-gold" size={16}/>{location}</Link>
       <div className="ml-auto flex items-center gap-4"><a href="https://wa.me/" aria-label="Contact BoozePap on WhatsApp" className="hidden sm:block"><MessageCircle/></a><Link href="/account" className="flex items-center gap-2" aria-label="Account"><UserCircle/><span className="hidden text-xs font-bold xl:inline">Account</span></Link><Link href="/wishlist" className="relative hidden sm:block" aria-label="Wishlist"><Heart/></Link><Link href="/checkout" data-cart-icon className="relative flex items-center gap-2" aria-label="Cart"><ShoppingBag/><span className="absolute -right-2 -top-2 rounded-full bg-brand-orange px-1.5 text-[10px] font-black">{cart.count}</span><span className="hidden text-xs font-black xl:inline">{money(cart.total)}</span></Link></div>
     </div>
-    <nav aria-label="Primary navigation" className={`${menuOpen?'flex':'hidden'} flex-col border-t border-white/15 bg-brand-deep px-4 py-2 lg:flex lg:flex-row lg:items-center lg:justify-center lg:gap-8`}>{primaryLinks.map(([label,href]) => <Link onClick={()=>setMenuOpen(false)} key={href} href={href} className="border-b border-white/10 py-3 text-xs font-bold uppercase tracking-wider transition hover:text-brand-lightGold lg:border-0 lg:py-1">{label}</Link>)}</nav>
+    <nav aria-label="Primary navigation" className={`${menuOpen?'flex':'hidden'} flex-col border-t border-brand-gold/30 bg-black/25 px-4 py-2 backdrop-blur-sm lg:flex lg:flex-row lg:items-center lg:justify-center lg:gap-8`}>{primaryLinks.map(([label,href]) => <Link onClick={()=>setMenuOpen(false)} key={href} href={href} className="border-b border-white/10 py-3 text-xs font-bold uppercase tracking-wider transition hover:text-brand-lightGold lg:border-0 lg:py-1">{label}</Link>)}</nav>
   </header>;
 }
 
@@ -104,7 +105,7 @@ BoozePap Deliveries promotes responsible drinking and only serves customers who 
 }
 
 export function CategoryGrid({ categories }: { categories: DbCategory[] }) {
-  return <section className="mx-auto grid max-w-[1280px] grid-cols-3 gap-3 px-4 py-8 sm:grid-cols-4 sm:px-6 md:grid-cols-6 lg:grid-cols-8">{categories.map((category) => <Link href={`/category/${category.slug}`} key={category.id} className="group relative aspect-square overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-card"><SmartImage src={category.image_url || 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=700&q=80'} alt={`${category.name} category`} sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 17vw, (max-width: 1280px) 13vw, 9vw" className="transition duration-500 group-hover:scale-[1.03]" /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" /><div className="absolute inset-x-0 bottom-0 px-2 py-1.5 text-white"><h2 className="truncate text-[11px] font-semibold tracking-wide sm:text-xs">{category.name}</h2></div></Link>)}</section>;
+  return <section className="mx-auto grid max-w-[1280px] grid-cols-3 gap-3 px-4 py-8 sm:grid-cols-4 sm:px-6 md:grid-cols-6 lg:grid-cols-8">{categories.map((category) => <Link href={`/category/${category.slug}`} key={category.id} className="group relative aspect-square overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-card"><SmartImage src={categoryImageFor(category)} alt={`${category.name} category`} sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 17vw, (max-width: 1280px) 13vw, 9vw" className="transition duration-500 group-hover:scale-[1.03]" /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" /><div className="absolute inset-x-0 bottom-0 px-2 py-1.5 text-white"><h2 className="truncate text-[11px] font-semibold tracking-wide sm:text-xs">{category.name}</h2></div></Link>)}</section>;
 }
 
 export function ProductCard({ p }: { p: DbProduct }) {
