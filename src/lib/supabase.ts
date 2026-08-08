@@ -1,3 +1,5 @@
+import { categoryImageFor } from '@/lib/category-images';
+
 export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const supabasePublicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublicKey);
@@ -9,7 +11,7 @@ export type DbPromotion = { id: string; title: string; code?: string; descriptio
 export type DbHomepageSection = { id: string; heading: string; category_id?: string | null; product_ids: string[]; use_best_sellers: boolean; item_limit: number; sort_order: number; is_active: boolean; updated_at?: string; categories?: { slug: string } | null };
 export type DbDeliverySetting = { id: string; name: string; min_distance_km: number; max_distance_km?: number; fee: number; estimated_minutes_min: number; estimated_minutes_max: number };
 export type DbProduct = {
-  id: string; name: string; slug: string; description?: string; short_description?: string; seo_title?: string; seo_description?: string; sku?: string; abv?: number; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string;
+  id: string; category_id?: string | null; name: string; slug: string; description?: string; short_description?: string; seo_title?: string; seo_description?: string; sku?: string; abv?: number; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string;
   price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string; discount_label?: string; currency?: string; stock?: number; low_stock_threshold?: number; image_url?: string; gallery_urls?: string[];
   tasting_notes?: string; pairing_suggestions?: string;
   is_top_seller?: boolean; is_new_arrival?: boolean; is_featured?: boolean; is_active?: boolean; updated_at?: string;
@@ -47,12 +49,13 @@ export function getSupabaseProjectRef() {
 }
 
 export async function getCategories(): Promise<DbCategory[]> {
-  return supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
+  const rows = await supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
+  return rows.map(category => ({ ...category, image_url: categoryImageFor(category) }));
 }
 
 export async function getCategory(slug: string): Promise<DbCategory | null> {
   const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public category' });
-  return rows[0] || null;
+  return rows[0] ? { ...rows[0], image_url: categoryImageFor(rows[0]) } : null;
 }
 
 export async function getBanners(): Promise<DbBanner[]> {
@@ -100,8 +103,16 @@ export async function getHomepageSection(id: string): Promise<DbHomepageSection 
   return rows[0] || null;
 }
 
-export async function getProductsByCategory(slug: string): Promise<DbProduct[]> {
-  return supabaseFetch<DbProduct>(`products?select=*,categories!inner(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&categories.slug=eq.${encodeURIComponent(slug)}&order=sort_order.asc,created_at.desc`, { cache: 'no-store', resource: 'public products by category' });
+export async function getProductsByCategory(slug: string, categoryId?: string): Promise<DbProduct[]> {
+  // Use the exact same public result as Shop All, then filter it locally. This
+  // avoids PostgREST relationship/filter differences hiding correctly assigned
+  // products while retaining the category saved on the product row.
+  const [products, category] = await Promise.all([
+    getProducts(),
+    categoryId ? Promise.resolve(null) : getCategory(slug),
+  ]);
+  const id = categoryId || category?.id;
+  return products.filter(product => product.category_id === id || product.categories?.slug === slug);
 }
 
 export async function getProduct(slug: string): Promise<DbProduct | null> {
