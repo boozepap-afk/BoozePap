@@ -8,7 +8,7 @@ export type DbCategory = { id: string; name: string; slug: string; parent_id?: s
 export type DbVariant = { id: string; name: string; sku?: string; option_values?: Record<string, string>; price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string; discount_label?: string; stock: number; low_stock_threshold?: number; image_url?: string; is_active?: boolean };
 export type DbBanner = { id: string; title: string; subtitle?: string | null; image_url: string; mobile_image_url?: string | null; badge_text?: string | null; button_label?: string | null; button_text?: string | null; button_url?: string | null; sort_order?: number | null; is_active?: boolean; starts_at?: string | null; ends_at?: string | null };
 export type DbPromotion = { id: string; title: string; code?: string; description?: string; image_url?: string; badge_text?: string; button_label?: string; button_url?: string; discount_type: string; discount_value: number; sort_order?: number };
-export type DbHomepageSection = { id: string; heading: string; category_id?: string | null; product_ids: string[]; use_best_sellers: boolean; item_limit: number; sort_order: number; is_active: boolean; updated_at?: string; categories?: { slug: string } | null };
+export type DbHomepageSection = { id: string; heading: string; category_id?: string | null; product_ids: string[]; use_best_sellers: boolean; item_limit: number; sort_order: number; rotation_enabled: boolean; destination_url?: string | null; is_active: boolean; updated_at?: string; categories?: { slug: string } | null };
 export type DbDeliverySetting = { id: string; name: string; min_distance_km: number; max_distance_km?: number; fee: number; estimated_minutes_min: number; estimated_minutes_max: number };
 export type DbProduct = {
   id: string; category_id?: string | null; name: string; slug: string; description?: string; short_description?: string; seo_title?: string; seo_description?: string; sku?: string; abv?: number; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string;
@@ -101,6 +101,11 @@ export async function getHomepageSections(): Promise<DbHomepageSection[]> {
 export async function getHomepageSection(id: string): Promise<DbHomepageSection | null> {
   const rows = await supabaseFetch<DbHomepageSection>(`homepage_product_sections?select=*,categories(slug)&id=eq.${encodeURIComponent(id)}&is_active=eq.true&limit=1`, { cache: 'no-store', resource: 'public homepage product section' });
   return rows[0] || null;
+}
+
+export async function getTopSellingProductIds(limit = 24): Promise<string[]> {
+  const rows = await supabaseFetch<{ product_id: string }>(`rpc/homepage_top_selling_product_ids?result_limit=${Math.max(1, Math.min(limit, 24))}`, { cache: 'no-store', resource: 'homepage top-selling products' });
+  return rows.map(row => row.product_id);
 }
 
 export async function getProductsByCategory(slug: string, categoryId?: string): Promise<DbProduct[]> {
