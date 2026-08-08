@@ -212,10 +212,10 @@ function HomepageSectionsManager({sections,categories,products,onReload}: { sect
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!supabase || saving) return; setSaving(true); setMessage('');
     try {
-      await requireSession();
       const form = new FormData(event.currentTarget), heading = String(form.get('heading') || '').trim();
       if (!heading) throw new Error('Section title is required.');
       const payload = { heading, category_id: String(form.get('category_id') || '') || null, product_ids: form.getAll('product_ids').map(String).filter(Boolean), use_best_sellers: form.get('use_best_sellers') === 'on', item_limit: Number(form.get('item_limit') || 8), sort_order: Number(form.get('sort_order') || 0), destination_url: String(form.get('destination_url') || '').trim() || null, rotation_enabled: Boolean(form.get('rotation_enabled')), is_active: form.get('is_active') === 'on' };
+      await requireSession();
       const result = editing
         ? await supabase.from('homepage_product_sections').update(payload).eq('id',editing.id).select().single()
         : await supabase.from('homepage_product_sections').insert(payload).select().single();
