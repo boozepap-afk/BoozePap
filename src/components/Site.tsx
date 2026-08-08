@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Heart, MapPin as MapPinIcon, Menu, MessageCircle, Search, ShoppingBag, UserCircle, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Heart, MapPin as MapPinIcon, Menu, MessageCircle, Search, ShoppingBag, UserCircle, X } from 'lucide-react';
 import { DbCategory, DbProduct, effectivePrice, imageFor, money, SiteContent } from '@/lib/supabase';
 import { categoryImageFor } from '@/lib/category-images';
 import { readCart, writeCart } from '@/lib/cart';
@@ -139,5 +139,7 @@ function CatalogCards({ products, limit }: { products: DbProduct[]; limit?: numb
 }
 
 export function ProductRail({ title, products, href, limit = 8 }: { title: string; products: DbProduct[]; href: string; limit?: number }) {
-  return <section className="mx-auto max-w-[1280px] overflow-hidden px-4 py-8 sm:px-6"><div className="mb-5 flex items-end justify-between border-b border-neutral-200 pb-3"><div><span className="mb-2 block h-1 w-10 bg-brand-gold"/><h2 className="text-xl font-black tracking-tight text-brand-ink">{title}</h2></div><Link href={href} className="text-xs font-bold uppercase tracking-wider text-brand-deep">View all</Link></div>{products.length ? <div className="product-rail-grid"><CatalogCards products={products} limit={limit} /></div> : <div className="rounded-xl border border-dashed border-neutral-300 bg-white px-6 py-10 text-center text-sm text-neutral-500">No products are available in this collection yet.</div>}</section>;
+  const rail = useRef<HTMLDivElement>(null);
+  const move = (direction: number) => rail.current?.scrollBy({ left: direction * rail.current.clientWidth * .85, behavior: 'smooth' });
+  return <section className="mx-auto max-w-[1280px] overflow-hidden px-4 py-8 sm:px-6"><div className="mb-5 flex items-end justify-between border-b border-neutral-200 pb-3"><div><span className="mb-2 block h-1 w-10 bg-brand-gold"/><h2 className="text-xl font-black tracking-tight text-brand-ink">{title}</h2></div><div className="flex items-center gap-2">{products.length > 2&&<><button type="button" onClick={()=>move(-1)} aria-label={`Previous ${title} products`} className="grid h-8 w-8 place-items-center rounded-full border bg-white text-brand-deep"><ChevronLeft size={17}/></button><button type="button" onClick={()=>move(1)} aria-label={`Next ${title} products`} className="grid h-8 w-8 place-items-center rounded-full border bg-white text-brand-deep"><ChevronRight size={17}/></button></>}<Link href={href} className="ml-1 text-xs font-bold uppercase tracking-wider text-brand-deep">View all</Link></div></div>{products.length ? <div ref={rail} className="product-rail-grid" aria-label={`${title} product carousel`}><CatalogCards products={products} limit={limit} /></div> : <div className="rounded-xl border border-dashed border-neutral-300 bg-white px-6 py-10 text-center text-sm text-neutral-500">No products are available in this collection yet.</div>}</section>;
 }
