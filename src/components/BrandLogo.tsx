@@ -1,12 +1,16 @@
 const DEFAULT_LOGO_SRC = '/boozepap-logo.svg';
 
-export function BrandLogo({ footer = false }: { footer?: boolean; src?: string }) {
+type BrandLogoProps = { footer?: boolean; src?: string };
+
+export function BrandLogo({ footer = false, src }: BrandLogoProps) {
+  const resolvedSrc = src || DEFAULT_LOGO_SRC;
+
   return (
     <div className="flex shrink-0 items-center text-left">
       <img
         src={src || DEFAULT_LOGO_SRC}
         alt="BoozePap"
-        className={footer ? 'h-28 w-auto object-contain' : 'h-16 w-auto object-contain sm:h-20'}
+        className={footer ? 'h-24 w-auto max-w-full object-contain' : 'h-14 w-auto max-w-[190px] object-contain sm:h-16 sm:max-w-[230px]'}
       />
     </div>
   );

@@ -86,7 +86,9 @@ export async function getCheckoutSettings(): Promise<CheckoutSettings> {
 }
 
 export async function getProducts(): Promise<DbProduct[]> {
-  return supabaseFetch<DbProduct>('products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&order=updated_at.desc,created_at.desc', { cache: 'no-store', resource: 'public products and relationships' });
+  const products = await supabaseFetch<DbProduct>('products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&order=updated_at.desc,created_at.desc', { cache: 'no-store', resource: 'public products and relationships' });
+  console.info('[BoozePap products] Storefront fetch complete', { project: getSupabaseProjectRef(), fetched: products.length });
+  return products;
 }
 
 export async function getHomepageSections(): Promise<DbHomepageSection[]> {
