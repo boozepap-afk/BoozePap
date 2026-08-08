@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function Category({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [category, list] = await Promise.all([slug === 'all' ? null : getCategory(slug), slug === 'all' ? getProducts() : getProductsByCategory(slug)]);
+  const category = slug === 'all' ? null : await getCategory(slug);
   if (slug !== 'all' && !category) notFound();
+  const list = slug === 'all' ? await getProducts() : await getProductsByCategory(slug, category!.id);
   const title = slug === 'all' ? 'All Products' : category?.name || slug.replaceAll('-', ' ');
   return <>
     <JsonLd data={[{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: absoluteUrl(categoryCanonicalPath(slug)), numberOfItems: list.length }, breadcrumbSchema([{ name: 'Home', url: '/' }, { name: title, url: categoryCanonicalPath(slug) }])]} />

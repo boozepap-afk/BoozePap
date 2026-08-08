@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Journal, ProductRail, SeoArticle } from '@/components/Site';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, money } from '@/lib/supabase';
-import { stableCollectionSlug } from '@/lib/public-urls';
+import { categoryCanonicalPath, stableCollectionSlug } from '@/lib/public-urls';
 import { DEFAULT_DESCRIPTION } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export default async function Home() {
   const arrivals = products.filter((product) => product.is_new_arrival).sort((a, b) => Date.parse(b.updated_at || '') - Date.parse(a.updated_at || ''));
   const featured = products.filter((product) => product.is_featured);
   const wines = products.filter((product) => product.categories?.slug === 'wine');
-  const sections = (configuredSections.length ? configuredSections.map(section => {
+  const editorialSections = (configuredSections.length ? configuredSections.map(section => {
     const heading = section.heading.toLowerCase();
     const selected = section.product_ids?.length
       ? section.product_ids.map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product))
@@ -41,6 +41,11 @@ export default async function Home() {
     { title: 'New Arrivals', products: arrivals, href: '/collections/new-arrivals', limit: 8 },
     { title: 'Featured Products', products: featured, href: '/collections/featured', limit: 8 },
   ]).sort((a, b) => sectionPriority(a.title) - sectionPriority(b.title));
+  const categorySections = categories.map((category, index) => {
+    const matching = products.filter(product => product.category_id === category.id || product.categories?.slug === category.slug);
+    return { title: category.name, products: rotate(matching, index), href: categoryCanonicalPath(category.slug), limit: 12 };
+  }).filter(section => section.products.length > 0 && !editorialSections.some(existing => existing.title.toLowerCase() === section.title.toLowerCase()));
+  const sections = [...editorialSections, ...categorySections];
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>
@@ -55,6 +60,12 @@ export default async function Home() {
     <Journal content={content} />
     <SeoArticle content={content} />
   </main>;
+}
+
+function rotate<T>(items: T[], offset: number) {
+  if (items.length < 2) return items;
+  const start = offset % items.length;
+  return [...items.slice(start), ...items.slice(0, start)];
 }
 
 function sectionPriority(title: string) {
