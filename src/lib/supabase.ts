@@ -100,8 +100,10 @@ export async function getHomepageSection(id: string): Promise<DbHomepageSection 
   return rows[0] || null;
 }
 
-export async function getProductsByCategory(slug: string): Promise<DbProduct[]> {
-  return supabaseFetch<DbProduct>(`products?select=*,categories!inner(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&categories.slug=eq.${encodeURIComponent(slug)}&order=sort_order.asc,created_at.desc`, { cache: 'no-store', resource: 'public products by category' });
+export async function getProductsByCategory(slug: string, categoryId?: string): Promise<DbProduct[]> {
+  const id = categoryId || (await getCategory(slug))?.id;
+  if (!id) return [];
+  return supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&category_id=eq.${encodeURIComponent(id)}&order=sort_order.asc,created_at.desc`, { cache: 'no-store', resource: 'public products by category' });
 }
 
 export async function getProduct(slug: string): Promise<DbProduct | null> {
