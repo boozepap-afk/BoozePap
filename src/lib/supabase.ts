@@ -1,3 +1,5 @@
+import { categoryImageFor } from '@/lib/category-images';
+
 export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const supabasePublicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublicKey);
@@ -6,10 +8,10 @@ export type DbCategory = { id: string; name: string; slug: string; parent_id?: s
 export type DbVariant = { id: string; name: string; sku?: string; option_values?: Record<string, string>; price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string; discount_label?: string; stock: number; low_stock_threshold?: number; image_url?: string; is_active?: boolean };
 export type DbBanner = { id: string; title: string; subtitle?: string | null; image_url: string; mobile_image_url?: string | null; badge_text?: string | null; button_label?: string | null; button_text?: string | null; button_url?: string | null; sort_order?: number | null; is_active?: boolean; starts_at?: string | null; ends_at?: string | null };
 export type DbPromotion = { id: string; title: string; code?: string; description?: string; image_url?: string; badge_text?: string; button_label?: string; button_url?: string; discount_type: string; discount_value: number; sort_order?: number };
-export type DbHomepageSection = { id: string; heading: string; category_id?: string | null; product_ids: string[]; use_best_sellers: boolean; item_limit: number; sort_order: number; is_active: boolean; updated_at?: string; categories?: { slug: string } | null };
+export type DbHomepageSection = { id: string; heading: string; category_id?: string | null; product_ids: string[]; use_best_sellers: boolean; item_limit: number; sort_order: number; rotation_enabled: boolean; destination_url?: string | null; is_active: boolean; updated_at?: string; categories?: { slug: string } | null };
 export type DbDeliverySetting = { id: string; name: string; min_distance_km: number; max_distance_km?: number; fee: number; estimated_minutes_min: number; estimated_minutes_max: number };
 export type DbProduct = {
-  id: string; name: string; slug: string; description?: string; short_description?: string; seo_title?: string; seo_description?: string; sku?: string; abv?: number; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string;
+  id: string; category_id?: string | null; name: string; slug: string; description?: string; short_description?: string; seo_title?: string; seo_description?: string; sku?: string; abv?: number; country?: string; bottle_size?: string; grape_variety?: string; wine_type?: string; sweetness?: string; whisky_type?: string; age_statement?: string; beer_type?: string; pack_size?: string; product_format?: string; gin_style?: string; flavour?: string;
   price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string; discount_label?: string; currency?: string; stock?: number; low_stock_threshold?: number; image_url?: string; gallery_urls?: string[];
   tasting_notes?: string; pairing_suggestions?: string;
   is_top_seller?: boolean; is_new_arrival?: boolean; is_featured?: boolean; is_active?: boolean; updated_at?: string;
@@ -47,12 +49,13 @@ export function getSupabaseProjectRef() {
 }
 
 export async function getCategories(): Promise<DbCategory[]> {
-  return supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
+  const rows = await supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
+  return rows.map(category => ({ ...category, image_url: categoryImageFor(category) }));
 }
 
 export async function getCategory(slug: string): Promise<DbCategory | null> {
   const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public category' });
-  return rows[0] || null;
+  return rows[0] ? { ...rows[0], image_url: categoryImageFor(rows[0]) } : null;
 }
 
 export async function getBanners(): Promise<DbBanner[]> {
@@ -92,16 +95,29 @@ export async function getProducts(): Promise<DbProduct[]> {
 }
 
 export async function getHomepageSections(): Promise<DbHomepageSection[]> {
-  return supabaseFetch<DbHomepageSection>('homepage_product_sections?select=*,categories(slug)&is_active=eq.true&order=sort_order.asc,created_at.asc', { cache: 'no-store', resource: 'public homepage product sections' });
+  return supabaseFetch<DbHomepageSection>('homepage_product_sections?select=id,heading,category_id,product_ids,use_best_sellers,item_limit,sort_order,rotation_enabled,destination_url,is_active&is_active=eq.true&order=sort_order.asc', { cache: 'no-store', resource: 'public homepage product sections' });
 }
 
 export async function getHomepageSection(id: string): Promise<DbHomepageSection | null> {
-  const rows = await supabaseFetch<DbHomepageSection>(`homepage_product_sections?select=*,categories(slug)&id=eq.${encodeURIComponent(id)}&is_active=eq.true&limit=1`, { cache: 'no-store', resource: 'public homepage product section' });
+  const rows = await supabaseFetch<DbHomepageSection>(`homepage_product_sections?select=id,heading,category_id,product_ids,use_best_sellers,item_limit,sort_order,rotation_enabled,destination_url,is_active&id=eq.${encodeURIComponent(id)}&is_active=eq.true&limit=1`, { cache: 'no-store', resource: 'public homepage product section' });
   return rows[0] || null;
 }
 
-export async function getProductsByCategory(slug: string): Promise<DbProduct[]> {
-  return supabaseFetch<DbProduct>(`products?select=*,categories!inner(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&categories.slug=eq.${encodeURIComponent(slug)}&order=sort_order.asc,created_at.desc`, { cache: 'no-store', resource: 'public products by category' });
+export async function getTopSellingProductIds(limit = 24): Promise<string[]> {
+  const rows = await supabaseFetch<{ product_id: string }>(`rpc/homepage_top_selling_product_ids?result_limit=${Math.max(1, Math.min(limit, 24))}`, { cache: 'no-store', resource: 'homepage top-selling products' });
+  return rows.map(row => row.product_id);
+}
+
+export async function getProductsByCategory(slug: string, categoryId?: string): Promise<DbProduct[]> {
+  // Use the exact same public result as Shop All, then filter it locally. This
+  // avoids PostgREST relationship/filter differences hiding correctly assigned
+  // products while retaining the category saved on the product row.
+  const [products, category] = await Promise.all([
+    getProducts(),
+    categoryId ? Promise.resolve(null) : getCategory(slug),
+  ]);
+  const id = categoryId || category?.id;
+  return products.filter(product => product.category_id === id || product.categories?.slug === slug);
 }
 
 export async function getProduct(slug: string): Promise<DbProduct | null> {
