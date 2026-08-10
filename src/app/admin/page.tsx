@@ -21,6 +21,7 @@ type Page = 'dashboard'|'products'|'discounts'|'categories'|'homepage'|'website'
 const defaultProduct = { name: '', description: '', tasting_notes: '', pairing_suggestions: '', country: '', bottle_size: '', grape_variety: '', wine_type: '', sweetness: '', whisky_type: '', age_statement: '', beer_type: '', pack_size: '', product_format: '', gin_style: '', flavour: '', abv: '', stock: '0', low_stock_threshold: '5', image_url: '', gallery_urls: [], price: '', category_id: '', is_active: true };
 const commonProductCountries = ['Argentina', 'Australia', 'Chile', 'France', 'Germany', 'Ireland', 'Italy', 'Japan', 'Kenya', 'Mexico', 'Netherlands', 'New Zealand', 'Portugal', 'Scotland', 'South Africa', 'Spain', 'United Kingdom', 'United States'];
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type ProductImageStatus = 'idle' | 'processing' | 'uploading' | 'complete' | 'error';
 
 function safeSupabaseError(cause: unknown) {
@@ -214,12 +215,36 @@ function HomepageSectionsManager({sections,categories,products,onReload}: { sect
     try {
       const form = new FormData(event.currentTarget), heading = String(form.get('heading') || '').trim();
       if (!heading) throw new Error('Section title is required.');
-      const payload = { heading, category_id: String(form.get('category_id') || '') || null, product_ids: form.getAll('product_ids').map(String).filter(Boolean), use_best_sellers: form.get('use_best_sellers') === 'on', item_limit: Number(form.get('item_limit') || 8), sort_order: Number(form.get('sort_order') || 0), destination_url: String(form.get('destination_url') || '').trim() || null, rotation_enabled: Boolean(form.get('rotation_enabled')), is_active: form.get('is_active') === 'on' };
+      const categoryId = String(form.get('category_id') || '').trim();
+      const selectedProductIds = form.getAll('product_ids').map(value => String(value).trim()).filter(Boolean);
+      if (categoryId && !uuidPattern.test(categoryId)) throw new Error('The selected category has an invalid UUID. Please choose the category again.');
+      if (selectedProductIds.some(id => !uuidPattern.test(id))) throw new Error('One or more selected products have invalid UUIDs. Please choose the products again.');
+      const payload = {
+        heading,
+        category_id: categoryId || null,
+        product_ids: selectedProductIds,
+        use_best_sellers: Boolean(form.get('use_best_sellers')),
+        item_limit: Number(form.get('item_limit')) || 8,
+        sort_order: Number(form.get('sort_order')) || 0,
+        rotation_enabled: Boolean(form.get('rotation_enabled')),
+        destination_url: String(form.get('destination_url') || '').trim() || null,
+        is_active: form.get('is_active') !== null,
+      };
       await requireSession();
       const result = editing
         ? await supabase.from('homepage_product_sections').update(payload).eq('id',editing.id).select().single()
         : await supabase.from('homepage_product_sections').insert(payload).select().single();
-      if (result.error || !result.data) throw result.error || new Error('Supabase did not return the saved homepage section.');
+      if (result.error) {
+        console.error(`Failed to ${editing ? 'update' : 'create'} homepage section:`, {
+          message: result.error.message,
+          details: result.error.details,
+          hint: result.error.hint,
+          code: result.error.code,
+          payload,
+        });
+        throw result.error;
+      }
+      if (!result.data) throw new Error('Supabase did not return the saved homepage section.');
       setMessage('Homepage section saved.'); setEditing(null); await onReload();
     } catch (cause) { setMessage(safeSupabaseError(cause)); } finally { setSaving(false); }
   }
