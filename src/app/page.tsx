@@ -29,7 +29,7 @@ export default async function Home() {
       : [];
     const category = categories.find(item => item.id === section.category_id);
     return { title: section.heading, products: selected, href: section.destination_url || (category ? categoryCanonicalPath(category.slug) : '/shop'), limit: section.item_limit };
-  }).filter(section => section.products.length > 0);
+  });
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>

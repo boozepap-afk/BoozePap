@@ -31,6 +31,8 @@ if (!admin.includes('<optgroup key={category.id} label={category.name}>')) throw
 if (!admin.includes('>{section.heading}</a>')) throw new Error('Admin homepage row names must be clickable');
 if (!admin.includes('setVisibleSections(current => editing')) throw new Error('Saved homepage rows must appear immediately in admin');
 if (!admin.includes('if (!homeSections.error) setSections')) throw new Error('A failed refresh must not erase homepage rows from admin');
-if (!rail.includes('className="relative h-40 overflow-hidden bg-white sm:h-44"')) throw new Error('Homepage product images must use the compact fixed-height presentation');
+if (!rail.includes('className="relative h-32 overflow-hidden bg-white sm:h-36"')) throw new Error('Homepage product images must use the compact fixed-height presentation');
+if (homepage.includes('filter(section => section.products.length > 0)')) throw new Error('Published category rows must remain visible while their products are being assigned');
+if (fs.readFileSync('src/lib/supabase.ts', 'utf8').includes('homepage_product_sections?select=*,categories(slug)')) throw new Error('Homepage rows must not depend on a cached PostgREST category relationship');
 
 console.log('Homepage section preload, category selection, and links are configured.');
