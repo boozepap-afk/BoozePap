@@ -5,6 +5,9 @@ const categoryRowsMigration = fs.readFileSync('supabase/migrations/2026081015000
 const homepage = fs.readFileSync('src/app/page.tsx', 'utf8');
 const rail = fs.readFileSync('src/components/Site.tsx', 'utf8');
 const admin = fs.readFileSync('src/app/admin/page.tsx', 'utf8');
+const publicUrls = fs.readFileSync('src/lib/public-urls.ts', 'utf8');
+const nextConfig = fs.readFileSync('next.config.mjs', 'utf8');
+const proxy = fs.readFileSync('src/proxy.ts', 'utf8');
 
 const expected = [
   ["'Top Selling'", "'/collections/top-sellers'"],
@@ -34,5 +37,11 @@ if (!admin.includes('if (!homeSections.error) setSections')) throw new Error('A 
 if (!rail.includes('className="relative h-32 overflow-hidden bg-white sm:h-36"')) throw new Error('Homepage product images must use the compact fixed-height presentation');
 if (homepage.includes('filter(section => section.products.length > 0)')) throw new Error('Published category rows must remain visible while their products are being assigned');
 if (fs.readFileSync('src/lib/supabase.ts', 'utf8').includes('homepage_product_sections?select=*,categories(slug)')) throw new Error('Homepage rows must not depend on a cached PostgREST category relationship');
+if (!publicUrls.includes('.trim().toLowerCase().replace(/[^a-z0-9]+/g')) throw new Error('Category URLs must normalize display values to lowercase URL-safe slugs');
+for (const [source, destination] of [['/Beer','/beer'], ['/Beers','/beer'], ['/Wine','/wine'], ['/Wines','/wine'], ['/Gin','/gin'], ['/Gins','/gin']]) {
+  if (!proxy.includes(`'${source}': '${destination}'`)) throw new Error(`Missing permanent ${source} redirect`);
+}
+if (!nextConfig.includes('async redirects()')) throw new Error('Existing Next.js redirect configuration must be preserved');
+if (!fs.existsSync('src/app/beer/page.tsx')) throw new Error('The lowercase /beer route must exist');
 
 console.log('Homepage section preload, category selection, and links are configured.');

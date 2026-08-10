@@ -28,7 +28,7 @@ export default async function Home() {
       : section.category_id ? products.filter(product => product.category_id === section.category_id)
       : [];
     const category = categories.find(item => item.id === section.category_id);
-    return { title: section.heading, products: selected, href: section.destination_url || (category ? categoryCanonicalPath(category.slug) : '/shop'), limit: section.item_limit };
+    return { title: section.heading, products: selected, href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
   });
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 

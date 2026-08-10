@@ -4,11 +4,11 @@ import { Suspense } from 'react';
 import { CategoryCatalog } from '@/components/CategoryCatalog';
 import { getCategories, getCategory, getProducts, getProductsByCategory } from '@/lib/supabase';
 import { absoluteUrl, breadcrumbSchema, JsonLd, plainText, truncate } from '@/lib/seo';
-import { categoryCanonicalPath } from '@/lib/public-urls';
+import { categoryCanonicalPath, categorySlug } from '@/lib/public-urls';
 
 export async function generateStaticParams() {
   const categories = await getCategories();
-  return categories.map((category) => ({ slug: category.slug }));
+  return categories.map((category) => ({ slug: categorySlug(category) }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

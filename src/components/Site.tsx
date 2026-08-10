@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Heart, MapPin as MapPinIcon, Menu, MessageCircle, Search, ShoppingBag, UserCircle, X } from 'lucide-react';
 import { DbCategory, DbProduct, effectivePrice, imageFor, money, SiteContent } from '@/lib/supabase';
 import { categoryImageFor } from '@/lib/category-images';
+import { categoryCanonicalPath } from '@/lib/public-urls';
 import { readCart, writeCart } from '@/lib/cart';
 import { BrandLogo } from '@/components/BrandLogo';
 import { SmartImage } from '@/components/SmartImage';
@@ -105,7 +106,7 @@ BoozePap Deliveries promotes responsible drinking and only serves customers who 
 }
 
 export function CategoryGrid({ categories }: { categories: DbCategory[] }) {
-  return <section className="grid w-full grid-cols-3 gap-3 px-4 py-8 sm:grid-cols-4 sm:px-6 md:grid-cols-6 lg:grid-cols-8">{categories.map((category) => <Link href={`/category/${category.slug}`} key={category.id} className="group relative aspect-square overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-card"><SmartImage src={categoryImageFor(category)} alt={`${category.name} category`} sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 17vw, (max-width: 1280px) 13vw, 9vw" className="transition duration-500 group-hover:scale-[1.03]" /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" /><div className="absolute inset-x-0 bottom-0 px-2 py-1.5 text-white"><h2 className="truncate text-[11px] font-semibold tracking-wide sm:text-xs">{category.name}</h2></div></Link>)}</section>;
+  return <section className="grid w-full grid-cols-3 gap-3 px-4 py-8 sm:grid-cols-4 sm:px-6 md:grid-cols-6 lg:grid-cols-8">{categories.map((category) => <Link href={categoryCanonicalPath(category)} key={category.id} className="group relative aspect-square overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-card"><SmartImage src={categoryImageFor(category)} alt={`${category.name} category`} sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 17vw, (max-width: 1280px) 13vw, 9vw" className="transition duration-500 group-hover:scale-[1.03]" /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" /><div className="absolute inset-x-0 bottom-0 px-2 py-1.5 text-white"><h2 className="truncate text-[11px] font-semibold tracking-wide sm:text-xs">{category.name}</h2></div></Link>)}</section>;
 }
 
 export function ProductCard({ p }: { p: DbProduct }) {
