@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function Category({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [category, list] = await Promise.all([slug === 'all' ? null : getCategory(slug), slug === 'all' ? getProducts() : getProductsByCategory(slug)]);
+  const category = slug === 'all' ? null : await getCategory(slug);
   if (slug !== 'all' && !category) notFound();
+  const list = slug === 'all' ? await getProducts() : await getProductsByCategory(slug, category!.id);
   const title = slug === 'all' ? 'All Products' : category?.name || slug.replaceAll('-', ' ');
   return <>
     <JsonLd data={[{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: absoluteUrl(categoryCanonicalPath(slug)), numberOfItems: list.length }, breadcrumbSchema([{ name: 'Home', url: '/' }, { name: title, url: categoryCanonicalPath(slug) }])]} />
@@ -40,5 +41,5 @@ export default async function Category({ params }: { params: Promise<{ slug: str
 }
 
 function CategoryCatalogFallback({ title, count }: { title: string; count: number }) {
-  return <main className="mx-auto min-h-[60vh] max-w-7xl bg-white px-3 py-5 sm:px-4"><div className="grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]"><aside className="hidden h-96 animate-pulse rounded-xl border bg-white lg:block"/><section><div className="flex items-end justify-between border-b pb-4"><div><h1 className="text-2xl font-black capitalize text-brand-ink">{title}</h1><p className="mt-1 text-xs text-neutral-500">{count} {count === 1 ? 'product' : 'products'}</p></div><div className="h-10 w-40 animate-pulse rounded-lg bg-neutral-100"/></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{Array.from({ length: Math.min(count || 4, 8) }, (_, index) => <div key={index} className="aspect-[4/5] animate-pulse rounded-xl bg-neutral-100"/>)}</div></section></div></main>;
+  return <main className="min-h-[60vh] w-full bg-white px-3 py-5 sm:px-4"><div className="grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]"><aside className="hidden h-96 animate-pulse rounded-xl border bg-white lg:block"/><section><div className="flex items-end justify-between border-b pb-4"><div><h1 className="text-2xl font-black capitalize text-brand-ink">{title}</h1><p className="mt-1 text-xs text-neutral-500">{count} {count === 1 ? 'product' : 'products'}</p></div><div className="h-10 w-40 animate-pulse rounded-lg bg-neutral-100"/></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{Array.from({ length: Math.min(count || 4, 8) }, (_, index) => <div key={index} className="aspect-[4/5] animate-pulse rounded-xl bg-neutral-100"/>)}</div></section></div></main>;
 }
