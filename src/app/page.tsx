@@ -25,16 +25,16 @@ export default async function Home() {
   const sections = configuredSections.map(section => {
     const category = categories.find(item => item.id === section.category_id);
     const manualProducts = (section.product_ids || []).map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
-    const categoryProducts = category ? products.filter(product =>
+    // Category rows show only the products explicitly selected in admin. The
+    // category controls which products are valid and where View all leads.
+    const selectedCategoryProducts = category ? manualProducts.filter(product =>
       product.category_id === category.id ||
       categorySlug(product.categories?.slug || '') === categorySlug(category)
-    ) : [];
-    // A category-backed homepage row must use the same catalogue membership as
-    // its View all page. Stale/removed manual IDs must never hide that category.
+    ) : manualProducts;
     const selected = section.use_best_sellers
       ? (topSelling.length ? topSelling : flaggedTopSelling.length ? flaggedTopSelling : products)
       : category
-      ? (categoryProducts.length ? categoryProducts : manualProducts)
+      ? selectedCategoryProducts
       : manualProducts;
     return { title: section.heading, products: selected, href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
   });

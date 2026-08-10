@@ -30,7 +30,6 @@ if (!admin.includes("item_limit: Number(form.get('item_limit')) || 8")) throw ne
 if (!admin.includes("console.error(`Failed to ${editing ? 'update' : 'create'} homepage section:`")) throw new Error('Supabase save errors must be logged with their complete details');
 if (!categoryRowsMigration.includes('add_missing_category_homepage_sections')) throw new Error('All active categories must be automatically added to homepage sections');
 if (!categoryRowsMigration.includes('existing.category_id = c.id')) throw new Error('Automatic category rows must not be duplicated');
-if (!admin.includes('<optgroup key={category.id} label={category.name}>')) throw new Error('Admin product choices must be grouped by category');
 if (!admin.includes('>{section.heading}</a>')) throw new Error('Admin homepage row names must be clickable');
 if (!admin.includes('setVisibleSections(current => editing')) throw new Error('Saved homepage rows must appear immediately in admin');
 if (!admin.includes('if (!homeSections.error) setSections')) throw new Error('A failed refresh must not erase homepage rows from admin');
@@ -44,9 +43,10 @@ for (const [source, destination] of [['/Beer','/beer'], ['/Beers','/beer'], ['/W
 if (!nextConfig.includes('async redirects()')) throw new Error('Existing Next.js redirect configuration must be preserved');
 if (!fs.existsSync('src/app/beer/page.tsx')) throw new Error('The lowercase /beer route must exist');
 if (!homepage.includes("categorySlug(product.categories?.slug || '') === categorySlug(category)")) throw new Error('Homepage rows must use the same relationship-slug fallback as View all');
-if (!homepage.includes('categoryProducts.length ? categoryProducts : manualProducts')) throw new Error('Stale manual IDs must not hide products from a category row');
-if (!admin.includes("setDraftProductIds(categoryId ? [] : editing?.product_ids || [])")) throw new Error('Category rows must not manually select every product in admin');
+if (!homepage.includes('? selectedCategoryProducts')) throw new Error('Category rows must render only products explicitly selected in admin');
+if (!admin.includes('products.filter(product=>product.category_id===draftCategoryId)')) throw new Error('A category row picker must list only products from that category');
 if (!admin.includes('destination_url: selectedCategory ? categoryCanonicalPath(selectedCategory)')) throw new Error('Category rows must save the destination for their selected category');
 if (!admin.includes("setDraftDestination(category?categoryCanonicalPath(category):'')")) throw new Error('Choosing Beer, Gin, or another category must update its destination immediately');
+if (!fs.existsSync('supabase/migrations/20260810170000_reset_category_homepage_product_selections.sql')) throw new Error('Generated select-all category product IDs must be cleared');
 
 console.log('Homepage section preload, category selection, and links are configured.');
