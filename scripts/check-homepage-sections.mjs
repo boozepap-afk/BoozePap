@@ -29,5 +29,8 @@ if (!categoryRowsMigration.includes('add_missing_category_homepage_sections')) t
 if (!categoryRowsMigration.includes('existing.category_id = c.id')) throw new Error('Automatic category rows must not be duplicated');
 if (!admin.includes('<optgroup key={category.id} label={category.name}>')) throw new Error('Admin product choices must be grouped by category');
 if (!admin.includes('>{section.heading}</a>')) throw new Error('Admin homepage row names must be clickable');
+if (!admin.includes('setVisibleSections(current => editing')) throw new Error('Saved homepage rows must appear immediately in admin');
+if (!admin.includes('if (!homeSections.error) setSections')) throw new Error('A failed refresh must not erase homepage rows from admin');
+if (!rail.includes('className="relative h-40 overflow-hidden bg-white sm:h-44"')) throw new Error('Homepage product images must use the compact fixed-height presentation');
 
 console.log('Homepage section preload, category selection, and links are configured.');
