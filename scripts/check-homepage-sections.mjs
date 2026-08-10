@@ -45,5 +45,7 @@ if (!nextConfig.includes('async redirects()')) throw new Error('Existing Next.js
 if (!fs.existsSync('src/app/beer/page.tsx')) throw new Error('The lowercase /beer route must exist');
 if (!homepage.includes("categorySlug(product.categories?.slug || '') === categorySlug(category)")) throw new Error('Homepage rows must use the same relationship-slug fallback as View all');
 if (!homepage.includes('categoryProducts.length ? categoryProducts : manualProducts')) throw new Error('Stale manual IDs must not hide products from a category row');
+if (!admin.includes('setDraftProductIds(categoryId?products.filter(product=>product.category_id===categoryId).map(product=>product.id):[])')) throw new Error('Choosing Beer, Gin, or another category must select its products in admin');
+if (!admin.includes('destination_url: selectedCategory ? categoryCanonicalPath(selectedCategory)')) throw new Error('Category rows must save the destination for their selected category');
 
 console.log('Homepage section preload, category selection, and links are configured.');
