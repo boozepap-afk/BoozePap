@@ -65,10 +65,7 @@ body {
   .product-rail-grid > * { flex-basis: calc((100% - 1.5rem) / 3); }
 }
 @media (min-width: 768px) {
-  .product-rail-grid > * { flex-basis: calc((100% - 3rem) / 5); }
-}
-@media (min-width: 1280px) {
-  .product-rail-grid > * { flex-basis: calc((100% - 5.25rem) / 8); }
+  .product-rail-grid > * { flex-basis: calc((100% - 2.25rem) / 4); }
 }
 @keyframes brand-partnership-scroll {
   from { transform: translateX(100%); }

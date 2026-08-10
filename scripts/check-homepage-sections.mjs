@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 const migration = fs.readFileSync('supabase/migrations/20260810120000_preload_default_homepage_rows.sql', 'utf8');
+const categoryRowsMigration = fs.readFileSync('supabase/migrations/20260810150000_add_all_category_homepage_rows.sql', 'utf8');
 const homepage = fs.readFileSync('src/app/page.tsx', 'utf8');
 const rail = fs.readFileSync('src/components/Site.tsx', 'utf8');
 const admin = fs.readFileSync('src/app/admin/page.tsx', 'utf8');
@@ -24,5 +25,9 @@ if (!admin.includes('category_id: categoryId || null')) throw new Error('An empt
 if (!admin.includes('selectedProductIds.some(id => !uuidPattern.test(id))')) throw new Error('Selected product IDs must be validated as UUIDs');
 if (!admin.includes("item_limit: Number(form.get('item_limit')) || 8")) throw new Error('The product limit must be normalized to a number');
 if (!admin.includes("console.error(`Failed to ${editing ? 'update' : 'create'} homepage section:`")) throw new Error('Supabase save errors must be logged with their complete details');
+if (!categoryRowsMigration.includes('add_missing_category_homepage_sections')) throw new Error('All active categories must be automatically added to homepage sections');
+if (!categoryRowsMigration.includes('existing.category_id = c.id')) throw new Error('Automatic category rows must not be duplicated');
+if (!admin.includes('<optgroup key={category.id} label={category.name}>')) throw new Error('Admin product choices must be grouped by category');
+if (!admin.includes('>{section.heading}</a>')) throw new Error('Admin homepage row names must be clickable');
 
 console.log('Homepage section preload, category selection, and links are configured.');
