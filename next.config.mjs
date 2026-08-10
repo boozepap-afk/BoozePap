@@ -6,11 +6,13 @@ const nextConfig = {
   images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] },
   poweredByHeader: false,
   async redirects() {
-    return categoryRedirects.map((slug) => ({
+    return [
+      ...categoryRedirects.map((slug) => ({
       source: `/category/${slug}`,
       destination: `/${slug === 'liqueurs' ? 'liqueur' : slug}`,
       permanent: true,
-    }));
+      })),
+    ];
   },
 };
 export default nextConfig;
