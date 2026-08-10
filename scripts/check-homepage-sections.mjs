@@ -48,5 +48,8 @@ if (!admin.includes('products.filter(product=>product.category_id===draftCategor
 if (!admin.includes('destination_url: selectedCategory ? categoryCanonicalPath(selectedCategory)')) throw new Error('Category rows must save the destination for their selected category');
 if (!admin.includes("setDraftDestination(category?categoryCanonicalPath(category):'')")) throw new Error('Choosing Beer, Gin, or another category must update its destination immediately');
 if (!fs.existsSync('supabase/migrations/20260810170000_reset_category_homepage_product_selections.sql')) throw new Error('Generated select-all category product IDs must be cleared');
+if (!homepage.includes('const selected = category')) throw new Error('A category must take priority over the global Top Selling source');
+if (!admin.includes('use_best_sellers: categoryId ? false')) throw new Error('Category rows must never save the Top Selling source');
+if (!fs.existsSync('supabase/migrations/20260810180000_disable_best_sellers_for_category_rows.sql')) throw new Error('Existing category rows must have Top Selling disabled');
 
 console.log('Homepage section preload, category selection, and links are configured.');

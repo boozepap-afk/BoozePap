@@ -31,10 +31,13 @@ export default async function Home() {
       product.category_id === category.id ||
       categorySlug(product.categories?.slug || '') === categorySlug(category)
     ) : manualProducts;
-    const selected = section.use_best_sellers
-      ? (topSelling.length ? topSelling : flaggedTopSelling.length ? flaggedTopSelling : products)
-      : category
+    // A selected category is authoritative even if an older row accidentally
+    // retained use_best_sellers=true. This prevents every category rail from
+    // rendering the same global product set.
+    const selected = category
       ? selectedCategoryProducts
+      : section.use_best_sellers
+      ? (topSelling.length ? topSelling : flaggedTopSelling.length ? flaggedTopSelling : products)
       : manualProducts;
     return { title: section.heading, products: selected, href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
   });
