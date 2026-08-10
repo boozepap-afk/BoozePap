@@ -2,8 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Journal, ProductRail, SeoArticle } from '@/components/Site';
 import { HeroCarousel } from '@/components/HeroCarousel';
-import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, money } from '@/lib/supabase';
-import { stableCollectionSlug } from '@/lib/public-urls';
+import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, getTopSellingProductIds, money } from '@/lib/supabase';
+import { categoryCanonicalPath, categorySlug } from '@/lib/public-urls';
 import { DEFAULT_DESCRIPTION } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -17,30 +17,30 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [categories, banners, products, promotions, content, configuredSections] = await Promise.all([
-    getCategories(), getBanners(), getProducts(), getPromotions(), getSiteContent(), getHomepageSections(),
+  const [categories, banners, products, promotions, content, configuredSections, topSellingIds] = await Promise.all([
+    getCategories(), getBanners(), getProducts(), getPromotions(), getSiteContent(), getHomepageSections(), getTopSellingProductIds(24),
   ]);
-  const topSellers = products.filter((product) => product.is_top_seller);
-  const arrivals = products.filter((product) => product.is_new_arrival).sort((a, b) => Date.parse(b.updated_at || '') - Date.parse(a.updated_at || ''));
-  const featured = products.filter((product) => product.is_featured);
-  const wines = products.filter((product) => product.categories?.slug === 'wine');
-  const sections = (configuredSections.length ? configuredSections.map(section => {
-    const heading = section.heading.toLowerCase();
-    const selected = section.product_ids?.length
-      ? section.product_ids.map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product))
-      : heading.includes('new arrival') ? arrivals
-      : heading.includes('deal') || heading.includes('featured') || heading.includes('offer') ? featured
-      : section.use_best_sellers || heading.includes('top seller') || heading.includes('best seller') ? topSellers
-      : section.category_id ? products.filter(product => product.categories?.slug === section.categories?.slug)
-      : products;
-    return { title: section.heading, products: selected, href: `/collections/${stableCollectionSlug(section) || 'featured'}`, limit: section.item_limit };
-  }) : [
-    { title: 'Deals', products: featured, href: '/offers', limit: 8 },
-    { title: 'Top Sellers', products: topSellers, href: '/collections/top-sellers', limit: 8 },
-    { title: 'Wines We Love', products: wines, href: '/wine', limit: 8 },
-    { title: 'New Arrivals', products: arrivals, href: '/collections/new-arrivals', limit: 8 },
-    { title: 'Featured Products', products: featured, href: '/collections/featured', limit: 8 },
-  ]).sort((a, b) => sectionPriority(a.title) - sectionPriority(b.title));
+  const topSelling = topSellingIds.map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
+  const flaggedTopSelling = products.filter(product => product.is_top_seller || product.is_featured);
+  const sections = configuredSections.map(section => {
+    const category = categories.find(item => item.id === section.category_id);
+    const manualProducts = (section.product_ids || []).map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
+    // Category rows show only the products explicitly selected in admin. The
+    // category controls which products are valid and where View all leads.
+    const selectedCategoryProducts = category ? manualProducts.filter(product =>
+      product.category_id === category.id ||
+      categorySlug(product.categories?.slug || '') === categorySlug(category)
+    ) : manualProducts;
+    // A selected category is authoritative even if an older row accidentally
+    // retained use_best_sellers=true. This prevents every category rail from
+    // rendering the same global product set.
+    const selected = category
+      ? selectedCategoryProducts
+      : section.use_best_sellers
+      ? (topSelling.length ? topSelling : flaggedTopSelling.length ? flaggedTopSelling : products)
+      : manualProducts;
+    return { title: section.heading, products: selected, href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
+  });
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>
@@ -55,12 +55,4 @@ export default async function Home() {
     <Journal content={content} />
     <SeoArticle content={content} />
   </main>;
-}
-
-function sectionPriority(title: string) {
-  const normalized = title.toLowerCase();
-  if (normalized.includes('new arrival')) return 100;
-  if (normalized.includes('top deal') || normalized.includes('featured') || normalized.includes('offer')) return 0;
-  if (normalized.includes('top seller') || normalized.includes('best seller')) return 10;
-  return 50;
 }
