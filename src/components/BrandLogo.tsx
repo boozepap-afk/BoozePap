@@ -12,7 +12,7 @@ export function BrandLogo({ footer = false, src, href = '/' }: BrandLogoProps) {
       <img
         src={resolvedSrc}
         alt="BoozePap"
-        className={footer ? 'h-24 w-auto max-w-full object-contain' : 'h-14 w-auto max-w-[190px] object-contain sm:h-16 sm:max-w-[230px]'}
+        className={footer ? 'h-28 w-auto max-w-full object-contain sm:h-32' : 'h-20 w-auto max-w-[250px] object-contain sm:h-24 sm:max-w-[320px]'}
       />
     </Link>
   );
