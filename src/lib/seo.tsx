@@ -20,7 +20,10 @@ export function JsonLd({ data }: { data: Record<string, unknown> | Array<Record<
 }
 
 export function businessGraph(socialLinks: string[] = [], logoUrl?: string) {
-  const searchLogo = logoUrl || absoluteUrl('/boozepap-logo.svg');
+  void logoUrl;
+  // Use the square, crawlable brand mark for Google Search organization
+  // results rather than an arbitrary uploaded wordmark with unknown dimensions.
+  const searchLogo = absoluteUrl('/favicon.svg');
   return {
   '@context': 'https://schema.org',
   '@graph': [
@@ -30,7 +33,7 @@ export function businessGraph(socialLinks: string[] = [], logoUrl?: string) {
       name: SITE_NAME,
       url: SITE_URL,
       description: DEFAULT_DESCRIPTION,
-      logo: { '@type': 'ImageObject', url: searchLogo, width: 200, height: 320 },
+      logo: { '@type': 'ImageObject', url: searchLogo, contentUrl: searchLogo, width: 512, height: 512 },
       image: searchLogo,
       sameAs: socialLinks.filter(Boolean),
     },
@@ -40,7 +43,7 @@ export function businessGraph(socialLinks: string[] = [], logoUrl?: string) {
       name: SITE_NAME,
       url: SITE_URL,
       description: DEFAULT_DESCRIPTION,
-      logo: { '@type': 'ImageObject', url: searchLogo, width: 200, height: 320 },
+      logo: { '@type': 'ImageObject', url: searchLogo, contentUrl: searchLogo, width: 512, height: 512 },
       image: searchLogo,
       areaServed: { '@type': 'City', name: 'Nairobi' },
       currenciesAccepted: 'KES',
