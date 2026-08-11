@@ -7,6 +7,7 @@ const nextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+      { source: '/favicon.ico', destination: '/favicon.svg', permanent: true },
       ...categoryRedirects.map((slug) => ({
       source: `/category/${slug}`,
       destination: `/${slug === 'liqueurs' ? 'liqueur' : slug}`,
