@@ -52,7 +52,7 @@ export default async function Home() {
       </Link>)}
     </section>}
     {sections.map((section, index) => <ProductRail key={`${section.title}-${index}`} {...section} />)}
-    <Journal content={content} />
+    <div hidden aria-hidden="true"><Journal content={content} /></div>
     <SeoArticle content={content} />
   </main>;
 }

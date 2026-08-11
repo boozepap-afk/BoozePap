@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">BoozePap</title>
+  <desc id="desc">BoozePap BP monogram in black, red and gold</desc>
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e30620"/>
+      <stop offset="1" stop-color="#a90018"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc44d"/>
+      <stop offset="1" stop-color="#d88700"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="#fff"/>
+  <circle cx="256" cy="256" r="232" fill="#fffaf5" stroke="#f1e5dc" stroke-width="12"/>
+  <text x="72" y="374" fill="#111" font-family="Georgia,serif" font-size="340" font-weight="700">B</text>
+  <text x="238" y="374" fill="url(#red)" font-family="Georgia,serif" font-size="340" font-weight="700">P</text>
+  <path d="M233 146h72l-10 112c-2 29-15 49-34 58v55h42v19h-108v-19h42v-55c-19-9-32-29-34-58l-10-112h40" fill="#fff" stroke="#171717" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M207 237h84l-3 27c-3 28-18 43-39 43s-36-15-39-43z" fill="url(#gold)"/>
+  <circle cx="231" cy="263" r="6" fill="#fff4c2"/><circle cx="266" cy="278" r="7" fill="#fff4c2"/><circle cx="252" cy="249" r="5" fill="#fff4c2"/>
+  <circle cx="279" cy="113" r="10" fill="#efa514"/><circle cx="304" cy="86" r="16" fill="#efa514"/><circle cx="326" cy="123" r="8" fill="#efa514"/>
+</svg>
