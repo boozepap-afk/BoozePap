@@ -4,7 +4,7 @@
   "description": "Order genuine wines, whisky, gin, vodka, beer and other drinks online from BoozePap. Enjoy fast, reliable alcohol delivery across Nairobi, 24/7.",
   "start_url": "/",
   "icons": [
-    { "src": "/google-favicon.png", "sizes": "96x96", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/boozepap-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "theme_color": "#F97316",
   "background_color": "#FFFFFF",
