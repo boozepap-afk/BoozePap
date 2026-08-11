@@ -23,7 +23,7 @@ export function businessGraph(socialLinks: string[] = [], logoUrl?: string) {
   void logoUrl;
   // Use the square, crawlable brand mark for Google Search organization
   // results rather than an arbitrary uploaded wordmark with unknown dimensions.
-  const searchLogo = absoluteUrl('/favicon.svg');
+  const searchLogo = absoluteUrl('/google-favicon.png');
   return {
   '@context': 'https://schema.org',
   '@graph': [

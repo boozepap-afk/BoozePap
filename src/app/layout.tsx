@@ -36,8 +36,8 @@ const baseMetadata: Metadata = {
   },
   twitter: { card: 'summary', title: 'BoozePap | Online Wines, Spirits & Alcohol Delivery Nairobi', description: DEFAULT_DESCRIPTION },
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml', sizes: '48x48' }],
-    shortcut: '/favicon.svg',
+    icon: [{ url: '/google-favicon.png', type: 'image/png', sizes: '96x96' }],
+    shortcut: '/google-favicon.png',
   },
   manifest: '/site.webmanifest',
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
