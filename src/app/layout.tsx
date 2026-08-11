@@ -38,7 +38,6 @@ const baseMetadata: Metadata = {
   icons: {
     icon: [{ url: '/boozepap-icon.svg', type: 'image/svg+xml', sizes: 'any' }],
     shortcut: '/boozepap-icon.svg',
-    apple: [{ url: '/boozepap-icon.svg', type: 'image/svg+xml', sizes: 'any' }],
   },
   manifest: '/site.webmanifest',
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
