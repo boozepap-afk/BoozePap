@@ -32,6 +32,12 @@ assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
+assert.match(route, /status: orderStatus/, 'order insert uses the shared valid order status');
+assert.match(route, /orderId: order\.id.+subtotal.+deliveryFee.+total/s, 'successful order returns authoritative totals');
+assert.doesNotMatch(route, /products'\)\.select\([^\n]*(stock|is_active|old_price)/, 'order does not query unconfirmed product columns');
+const productVerifier = fs.readFileSync('src/lib/server/checkout-products.ts','utf8');
+assert.match(productVerifier, /select\('id,name,price,published'\)/, 'product verification selects only confirmed production columns');
+assert.doesNotMatch(productVerifier, /old_price/, 'old_price is not required for checkout totals');
 const createOrder = fs.readFileSync('src/lib/server/create-order.ts','utf8');
 assert.match(createOrder, /create_checkout_order_atomic/, 'order and items prefer atomic RPC');
 assert.match(createOrder, /for every RPC failure/, 'any atomic RPC failure uses the compatible path');
