@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CheckoutCartError, hasCheckoutStock, normalizeCheckoutCart, unavailableProductIds } from '../src/lib/checkout-cart.ts';
-import { STORE_ORIGIN, bandForDistance, calculateDeliveryQuote, haversineKm, validCoordinates } from '../src/lib/server/delivery.ts';
+import { STORE_ORIGIN, calculateDeliveryQuote, deliveryPricingFromRow, haversineKm, validCoordinates } from '../src/lib/server/delivery.ts';
 
 const a = '11111111-1111-4111-8111-111111111111';
 const b = '22222222-2222-4222-8222-222222222222';
@@ -13,14 +13,17 @@ assert.deepEqual(unavailableProductIds([a,b], [{ id:a, is_active:true }]), [b], 
 assert.equal(hasCheckoutStock({ stock:0, track_inventory:true }, 1), false);
 assert.equal(hasCheckoutStock({ stock:0, track_inventory:false }, 1), true);
 assert.deepEqual(STORE_ORIGIN, { latitude: -1.293053, longitude: 36.787758 });
+const pricing = deliveryPricingFromRow({ store_latitude:-1.293053, store_longitude:36.787758, base_fee:200, included_distance_km:3, price_per_km:40, maximum_distance_km:50, estimated_time:'30–60 minutes' });
+assert.ok(pricing);
 assert.equal(haversineKm(STORE_ORIGIN.latitude, STORE_ORIGIN.longitude), 0, 'near Yaya Centre');
-const farKm = haversineKm(-1.36, 36.92);
-assert.ok(farKm > 10, 'far address has a larger distance');
-const bands = [{ min_distance_km: 0, max_distance_km: 5, fee: 200 }, { min_distance_km: 5, max_distance_km: 20, fee: 500 }];
-assert.equal(bandForDistance(1, bands)?.fee, 200, 'near fee');
-assert.equal(bandForDistance(farKm, bands)?.fee, 500, 'far fee');
-const quote = await calculateDeliveryQuote(STORE_ORIGIN.latitude, STORE_ORIGIN.longitude, 2500, 'cash', bands);
-assert.deepEqual({ distanceKm: quote?.distanceKm, deliveryFee: quote?.deliveryFee, subtotal: quote?.subtotal, total: quote?.total }, { distanceKm: 0, deliveryFee: 200, subtotal: 2500, total: 2700 });
+const near = await calculateDeliveryQuote(-1.293053, 36.787758, 2500, true, pricing, { googleKey:'' });
+assert.deepEqual(near, { subtotal:2500, distanceKm:0, deliveryFee:200, total:2700, estimatedTime:'30–60 minutes', locationVerified:true }, 'absent Google key uses Haversine');
+const far = await calculateDeliveryQuote(-1.36, 36.92, 2500, true, pricing, { googleKey:'' });
+assert.ok(far && far.distanceKm > 10 && far.deliveryFee > 200, 'far address pays per additional km');
+const failedGoogle = await calculateDeliveryQuote(-1.30, 36.80, 1000, true, pricing, { googleKey:'configured', fetcher:async () => new Response('failure',{status:500}) });
+assert.ok(failedGoogle?.distanceKm, 'Google API failure falls back to Haversine');
+await assert.rejects(() => calculateDeliveryQuote(91, 36.8, 1000, true, pricing, { googleKey:'' }), /Invalid quote input/, 'invalid coordinates');
+assert.deepEqual(unavailableProductIds([a,b], [{ id:a, is_active:true }]), [b], 'unavailable product');
 assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
@@ -40,6 +43,6 @@ const placeholderRoute = fs.readFileSync('src/app/placeholder-product.png/route.
 assert.match(placeholderRoute, /Content-Type': 'image\/png'/, 'product placeholder route returns PNG content');
 assert.match(placeholderRoute, /Buffer\.from\(PLACEHOLDER_PNG, 'base64'\)/, 'text-only route decodes a PNG payload');
 const quoteRoute = fs.readFileSync('src/app/api/checkout/quote/route.ts', 'utf8');
-assert.match(quoteRoute, /delivery_settings.+eq\('is_active', true\)/s, 'quote reads active delivery settings');
-assert.match(quoteRoute, /distanceKm: quote\.distanceKm.+deliveryFee: quote\.deliveryFee.+subtotal: quote\.subtotal.+total: quote\.total/s, 'quote returns all totals');
+assert.match(fs.readFileSync('src/lib/server/delivery-settings.ts','utf8'), /select\('\*'\).+eq\('is_active', true\).+limit\(1\).maybeSingle\(\)/s, 'quote reads one active setting without speculative columns');
+assert.match(quoteRoute, /return NextResponse\.json\(quote\)/, 'quote returns shared pricing response');
 console.log('Checkout and delivery validation tests passed.');

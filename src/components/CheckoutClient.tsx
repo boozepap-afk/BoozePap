@@ -100,7 +100,7 @@ export function CheckoutClient({ settings, bands }: { settings: CheckoutSettings
     const timeout = window.setTimeout(async () => {
       setQuoteLoading(true); setQuoteError('');
       try {
-        const response = await fetch('/api/checkout/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify({ latitude: coordinates.latitude, longitude: coordinates.longitude, subtotal: productTotal, paymentMethod: payment }) });
+        const response = await fetch('/api/checkout/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify({ latitude: coordinates.latitude, longitude: coordinates.longitude, locationVerified: coordinates.verified, cart: items.map(({ productId, variantId, quantity }) => ({ product_id: productId, variant_id: variantId, quantity })) }) });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error?.message || 'Unable to calculate delivery.');
         setDeliveryQuote(result as DeliveryQuote);
