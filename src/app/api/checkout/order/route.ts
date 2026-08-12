@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { kenyaPhone, requestStkPush } from '@/lib/server/mpesa';
 import { getAdminSupabase } from '@/lib/server/supabase-admin';
@@ -8,22 +9,23 @@ import { calculateDeliveryQuote, validCoordinates, type DeliveryPricing } from '
 import { getActiveDeliveryPricing } from '@/lib/server/delivery-settings';
 import { createOrderWithItems } from '@/lib/server/create-order';
 
-const failure = (code: string, message: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error: { code, message }, ...extra }, { status });
-const orderNumberForLog = () => `order-${Date.now().toString(36)}`;
-const dbFailure = (operation: string, error: unknown) => { console.error(`[Checkout database] ${operation} failed`, error); return failure('DATABASE_UNAVAILABLE', 'Checkout is temporarily unavailable. Please try again.', 500); };
+const failure = (code: string, message: string, status: number, requestId: string, extra: Record<string, unknown> = {}) => NextResponse.json({ error: { code, message, requestId }, ...extra }, { status });
 
 export async function POST(request: NextRequest) {
+  const requestId = randomUUID();
+  const fail = (code: string, message: string, status: number, extra: Record<string, unknown> = {}) => failure(code, message, status, requestId, extra);
+  const dbFailure = (operation: string, error: unknown) => { const value = error as { code?: string; message?: string; details?: string; hint?: string } | null; console.error(`[Checkout database] ${operation} failed`, { requestId, code: value?.code, message: value?.message, details: value?.details, hint: value?.hint }); return fail('DATABASE_UNAVAILABLE', 'Checkout is temporarily unavailable. Please try again.', 500); };
   try {
     const body = await request.json() as { cart: unknown; customer?: { name?: string; email?: string; phone?: string; address?: string; latitude?: number; longitude?: number; placeId?: string; placeName?: string; locationVerified?: boolean; deliveryInstructions?: string; apartment?: string; building?: string }; paymentMethod?: 'mpesa'|'cash'|'pickup'; giftNote?: string };
     const { lines: cart, productIds: ids } = normalizeCheckoutCart(body.cart);
     const customer = body.customer;
-    if (!customer?.name?.trim() || !customer.phone?.trim()) return failure('INVALID_CUSTOMER', 'Enter your name and phone number.', 400);
-    if (!body.paymentMethod || !['mpesa','cash','pickup'].includes(body.paymentMethod)) return failure('INVALID_PAYMENT_METHOD', 'Unsupported payment method.', 400);
+    if (!customer?.name?.trim() || !customer.phone?.trim()) return fail('INVALID_CUSTOMER', 'Enter your name and phone number.', 400);
+    if (!body.paymentMethod || !['mpesa','cash','pickup'].includes(body.paymentMethod)) return fail('INVALID_PAYMENT_METHOD', 'Unsupported payment method.', 400);
     const pickup = body.paymentMethod === 'pickup';
-    if (!pickup && !customer.address?.trim()) return failure('INVALID_ADDRESS', 'Enter a delivery address.', 400);
+    if (!pickup && !customer.address?.trim()) return fail('INVALID_ADDRESS', 'Enter a delivery address.', 400);
     const verified = !pickup && customer.locationVerified === true;
     const latitude = Number(customer.latitude), longitude = Number(customer.longitude);
-    if (verified && (!customer.placeId || !validCoordinates(latitude, longitude))) return failure('INVALID_LOCATION', 'Select your delivery location from the Google Maps suggestions.', 400);
+    if (verified && (!customer.placeId || !validCoordinates(latitude, longitude))) return fail('INVALID_LOCATION', 'Select your delivery location from the Google Maps suggestions.', 400);
 
     const db = getAdminSupabase();
     const auth = await createServerSupabase();
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     const { data: products, error: productsError } = await db.from('products').select('id,name,price,stock,is_active').in('id', ids);
     if (productsError) return dbFailure('products verification query', productsError);
     const missingIds = unavailableProductIds(ids, products || []);
-    if (missingIds.length) return failure('PRODUCT_UNAVAILABLE', 'Some products are unavailable.', 409, { unavailableProductIds: missingIds });
+    if (missingIds.length) return fail('PRODUCT_UNAVAILABLE', 'Some products are unavailable.', 409, { unavailableProductIds: missingIds });
     const { data: variants, error: variantsError } = await db.from('product_variants').select('id,product_id,name,price,stock,is_active').in('product_id', ids);
     if (variantsError) return dbFailure('product variants verification query', variantsError);
 
@@ -40,27 +42,27 @@ export async function POST(request: NextRequest) {
     for (const line of cart) {
       const product = products!.find(entry => entry.id === line.product_id)!;
       const variant = line.variant_id ? (variants || []).find(entry => entry.id === line.variant_id && entry.product_id === product.id) : null;
-      if (line.variant_id && (!variant || !variant.is_active)) return failure('VARIANT_UNAVAILABLE', 'A selected product size is unavailable.', 409, { unavailableVariantIds: [line.variant_id] });
+      if (line.variant_id && (!variant || !variant.is_active)) return fail('VARIANT_UNAVAILABLE', 'A selected product size is unavailable.', 409, { unavailableVariantIds: [line.variant_id] });
       const stockItem = variant || product;
       const price = Number((variant || product).price), quantity = Number(line.quantity);
-      if (!Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(price) || price < 0) return failure('INVALID_PRODUCT_DATA', 'A product in your cart has invalid pricing.', 409);
+      if (!Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(price) || price < 0) return fail('INVALID_PRODUCT_DATA', 'A product in your cart has invalid pricing.', 409);
       const name = variant ? `${product.name} — ${variant.name}` : product.name;
-      if (!hasCheckoutStock(stockItem, quantity)) return failure('INSUFFICIENT_STOCK', `${name} does not have enough stock available.`, 409);
+      if (!hasCheckoutStock(stockItem, quantity)) return fail('INSUFFICIENT_STOCK', `${name} does not have enough stock available.`, 409);
       subtotal += price * quantity;
       items.push({ product_id: product.id, variant_id: variant?.id || null, product_name: name, quantity, unit_price: price, line_total: price * quantity });
     }
-    if (!Number.isFinite(subtotal) || subtotal < 0) return failure('INVALID_CART_TOTAL', 'The cart total is invalid.', 400);
+    if (!Number.isFinite(subtotal) || subtotal < 0) return fail('INVALID_CART_TOTAL', 'The cart total is invalid.', 400);
 
-    const { pricing, error: pricingError } = await getActiveDeliveryPricing(db, orderNumberForLog());
-    if (pricingError || !pricing) return failure('DELIVERY_CONFIGURATION_UNAVAILABLE', 'Delivery pricing is temporarily unavailable.', 503);
+    const { pricing, error: pricingError } = await getActiveDeliveryPricing(db, requestId);
+    if (pricingError || !pricing) return fail('DELIVERY_CONFIGURATION_UNAVAILABLE', 'Delivery pricing is temporarily unavailable.', 503);
     let distanceKm: number | null = null, quotedDeliveryFee: number | null = null, estimatedTime = 'Delivery estimate will follow';
     if (!pickup && verified) {
       const quote = await calculateDeliveryQuote(latitude, longitude, subtotal, verified, pricing as DeliveryPricing);
-      if (!quote) return failure('OUTSIDE_DELIVERY_AREA', 'This location is outside our configured delivery area.', 422);
+      if (!quote) return fail('OUTSIDE_DELIVERY_AREA', 'This location is outside our configured delivery area.', 422);
       distanceKm = quote.distanceKm; quotedDeliveryFee = quote.deliveryFee; estimatedTime = quote.estimatedTime;
     }
     const deliveryFee = pickup ? 0 : quotedDeliveryFee ?? pricing.baseFee;
-    if (!Number.isFinite(deliveryFee) || deliveryFee < 0) return failure('INVALID_DELIVERY_FEE', 'Delivery pricing is temporarily unavailable.', 503);
+    if (!Number.isFinite(deliveryFee) || deliveryFee < 0) return fail('INVALID_DELIVERY_FEE', 'Delivery pricing is temporarily unavailable.', 503);
     const total = subtotal + deliveryFee, orderNumber = `BP-${Date.now().toString(36).toUpperCase()}`;
     const paymentStatus = body.paymentMethod === 'mpesa' ? 'pending_payment' : body.paymentMethod === 'cash' ? 'cash_due' : 'pending';
 
@@ -106,13 +108,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ orderNumber: order.order_number, checkoutToken: order.checkout_token, paymentStatus: 'pending_payment', distanceKm, deliveryFee, message: 'Check your phone and enter your M-Pesa PIN to complete payment.' });
       } catch (error) {
         console.error('[Checkout M-Pesa] request failed', error); await db.from('orders').update({ payment_status: 'failed' }).eq('id', order.id);
-        return failure('MPESA_START_FAILED', 'M-Pesa could not start. Your order was saved; contact us or choose another payment method.', 502, { orderNumber: order.order_number, checkoutToken: order.checkout_token, paymentStatus: 'failed' });
+        return fail('MPESA_START_FAILED', 'M-Pesa could not start. Your order was saved; contact us or choose another payment method.', 502, { orderNumber: order.order_number, checkoutToken: order.checkout_token, paymentStatus: 'failed' });
       }
     }
     return NextResponse.json({ orderNumber: order.order_number, checkoutToken: order.checkout_token, paymentStatus, distanceKm, deliveryFee });
   } catch (error) {
-    if (error instanceof CheckoutCartError) return failure('INVALID_CART', error.message, 400, { invalidCartIndexes: error.invalidIndexes });
+    if (error instanceof CheckoutCartError) return fail('INVALID_CART', error.message, 400, { invalidCartIndexes: error.invalidIndexes });
     console.error('[Checkout] unexpected failure', error);
-    return failure('CHECKOUT_FAILED', 'Unable to place your order right now. Please try again.', 500);
+    return fail('CHECKOUT_FAILED', 'Unable to place your order right now. Please try again.', 500);
   }
 }

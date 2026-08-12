@@ -15,15 +15,20 @@ export async function createOrderWithItems(db: SupabaseClient, orderPayload: Rec
   const rpcOrder = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
   if (!rpc.error && rpcOrder) return { order: rpcOrder as OrderResult, error: null, method: 'rpc' as const };
 
-  const rpcError = rpc.error as { code?: string; message?: string } | null;
-  const rpcUnavailable = rpcError?.code === 'PGRST202' || rpcError?.code === '42883' || /function .* does not exist|schema cache/i.test(rpcError?.message || '');
-  if (!rpcUnavailable) { logDatabaseError('create_checkout_order_atomic RPC', rpc.error); return { order: null, error: rpc.error, method: 'rpc' as const }; }
-  console.warn('[Checkout database] atomic RPC unavailable; using rollback-safe insert fallback', { code: rpcError?.code, message: rpcError?.message });
+  const rpcError = rpc.error as { code?: string; message?: string; details?: string; hint?: string } | null;
+  // A deployed function can still fail because its cached definition predates
+  // the live tables. Log the evidence and attempt the compatible insert path
+  // for every RPC failure, not only PGRST202/missing-function failures.
+  logDatabaseError('create_checkout_order_atomic RPC; trying compatible fallback', rpc.error);
 
   // delivery_distance_km is reporting-only and may be absent on an older live
   // schema. Do not make successful checkout depend on that optional column.
-  const { delivery_distance_km: _distance, ...compatiblePayload } = orderPayload;
-  void _distance;
+  const compatibleKeys = [
+    'customer_id', 'delivery_location_id', 'order_number', 'customer_name', 'customer_email', 'customer_phone',
+    'delivery_address', 'gps_lat', 'gps_lng', 'gift_note', 'payment_method', 'payment_status', 'status',
+    'subtotal', 'delivery_fee', 'discount_total', 'total',
+  ];
+  const compatiblePayload = Object.fromEntries(compatibleKeys.filter(key => key in orderPayload).map(key => [key, orderPayload[key]]));
   const inserted = await db.from('orders').insert(compatiblePayload).select('id,order_number,checkout_token').single();
   if (inserted.error || !inserted.data) { logDatabaseError('fallback order insert', inserted.error); return { order: null, error: inserted.error, method: 'fallback' as const }; }
   const itemsResult = await db.from('order_items').insert(items.map(item => ({ ...item, order_id: inserted.data.id })));
