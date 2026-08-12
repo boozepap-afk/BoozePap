@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const orderStatus: OrderStatus = body.paymentMethod === 'mpesa' ? 'awaiting_payment' : 'pending';
     const orderPayload = { customer_id: customerId, delivery_location_id: deliveryLocationId, order_number: orderNumber, customer_name: customer.name.trim(), customer_email: customer.email?.trim() || null, customer_phone: customer.phone, delivery_address: customer.address?.trim() || 'Store pickup', gps_lat: verified ? latitude : null, gps_lng: verified ? longitude : null, delivery_place_id: customer.placeId || null, delivery_place_name: customer.placeName || null, delivery_location_verified: verified, delivery_instructions: customer.deliveryInstructions?.trim() || null, gift_note: body.giftNote?.trim() || null, payment_method: body.paymentMethod, payment_status: paymentStatus, status: orderStatus, subtotal, delivery_fee: deliveryFee, delivery_distance_km: distanceKm == null ? null : Number(distanceKm.toFixed(2)), discount_total: 0, total };
     console.info('[Checkout] ORDER_INSERT', { requestId, itemCount: items.length });
-    const created = await createOrderWithItems(db, orderPayload, items);
+    const created = await createOrderWithItems(db, orderPayload, items, requestId);
     const order = created.order;
     if (created.error || !order) return dbFailure('order and items creation', created.error || new Error('Order creation returned no order'));
 
