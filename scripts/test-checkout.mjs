@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CheckoutCartError, hasCheckoutStock, normalizeCheckoutCart, unavailableProductIds } from '../src/lib/checkout-cart.ts';
 import { STORE_ORIGIN, calculateDeliveryQuote, deliveryPricingFromRow, haversineKm, validCoordinates } from '../src/lib/server/delivery.ts';
+import { ORDER_STATUSES, UNREVIEWED_ORDER_STATUSES } from '../src/lib/order-status.ts';
 
 const a = '11111111-1111-4111-8111-111111111111';
 const b = '22222222-2222-4222-8222-222222222222';
+assert.deepEqual(ORDER_STATUSES, ['pending','awaiting_payment','paid','confirmed','preparing','ready_for_dispatch','dispatched','delivered','cancelled']);
+assert.deepEqual(UNREVIEWED_ORDER_STATUSES, ['pending','awaiting_payment','paid']);
 assert.deepEqual(normalizeCheckoutCart([{ productId: a, quantity: 1 }]).productIds, [a]);
 assert.deepEqual(normalizeCheckoutCart([{ product_id: a, quantity: 1 }, { productId: a, quantity: 2 }]).lines, [{ product_id: a, variant_id: undefined, quantity: 3 }]);
 assert.throws(() => normalizeCheckoutCart([{ productId: 'sample-beer', quantity: 1 }]), CheckoutCartError);
@@ -29,6 +32,12 @@ assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
+assert.match(route, /status: orderStatus/, 'order insert uses the shared valid order status');
+assert.match(route, /orderId: order\.id.+subtotal.+deliveryFee.+total/s, 'successful order returns authoritative totals');
+assert.doesNotMatch(route, /products'\)\.select\([^\n]*(stock|is_active|old_price)/, 'order does not query unconfirmed product columns');
+const productVerifier = fs.readFileSync('src/lib/server/checkout-products.ts','utf8');
+assert.match(productVerifier, /select\('id,name,price,published'\)/, 'product verification selects only confirmed production columns');
+assert.doesNotMatch(productVerifier, /old_price/, 'old_price is not required for checkout totals');
 const createOrder = fs.readFileSync('src/lib/server/create-order.ts','utf8');
 assert.match(createOrder, /create_checkout_order_atomic/, 'order and items prefer atomic RPC');
 assert.match(createOrder, /for every RPC failure/, 'any atomic RPC failure uses the compatible path');
@@ -48,6 +57,8 @@ const placeholderRoute = fs.readFileSync('src/app/placeholder-product.png/route.
 assert.match(placeholderRoute, /Content-Type': 'image\/png'/, 'product placeholder route returns PNG content');
 assert.match(placeholderRoute, /Buffer\.from\(PLACEHOLDER_PNG, 'base64'\)/, 'text-only route decodes a PNG payload');
 const quoteRoute = fs.readFileSync('src/app/api/checkout/quote/route.ts', 'utf8');
+assert.doesNotMatch(quoteRoute, /supabase-admin|sendOrderEmail|resend|email/i, 'quote has no service-role or email dependency');
+assert.match(fs.readFileSync('src/lib/server/supabase-quote.ts','utf8'), /NEXT_PUBLIC_SUPABASE_ANON_KEY.+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/s, 'quote uses the public RLS client');
 assert.match(fs.readFileSync('src/lib/server/delivery-settings.ts','utf8'), /select\('\*'\).+eq\('is_active', true\).+limit\(1\).maybeSingle\(\)/s, 'quote reads one active setting without speculative columns');
 assert.match(quoteRoute, /return NextResponse\.json\(quote\)/, 'quote returns shared pricing response');
 console.log('Checkout and delivery validation tests passed.');
