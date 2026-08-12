@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { DbProduct, DbVariant, effectivePrice, money } from '@/lib/supabase';
+import { DbProduct, DbVariant, effectivePrice, money, PRODUCT_IMAGE_PLACEHOLDER } from '@/lib/supabase';
 import { readCart, writeCart } from '@/lib/cart';
 
 export function ProductPurchase({ product, initialVariantId }: { product: DbProduct; initialVariantId?: string }) {
@@ -11,7 +11,7 @@ export function ProductPurchase({ product, initialVariantId }: { product: DbProd
   const selected = variants.find((variant) => variant.id === selectedId) as DbVariant | undefined;
   const pricing = effectivePrice(selected || product), price = pricing.price;
   const available = selected ? selected.stock > 0 : (product.stock || 0) > 0;
-  const image = selected?.image_url || product.image_url || product.gallery_urls?.[0];
+  const image = selected?.image_url || product.image_url || product.gallery_urls?.[0] || PRODUCT_IMAGE_PLACEHOLDER;
 
   const maxQuantity = selected ? selected.stock : Number(product.stock || 0);
   function addToCart() {
