@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CheckoutCartError, hasCheckoutStock, normalizeCheckoutCart, unavailableProductIds } from '../src/lib/checkout-cart.ts';
-import { STORE_ORIGIN, bandForDistance, haversineKm, validCoordinates } from '../src/lib/server/delivery.ts';
+import { STORE_ORIGIN, bandForDistance, calculateDeliveryQuote, haversineKm, validCoordinates } from '../src/lib/server/delivery.ts';
 
 const a = '11111111-1111-4111-8111-111111111111';
 const b = '22222222-2222-4222-8222-222222222222';
@@ -19,6 +19,8 @@ assert.ok(farKm > 10, 'far address has a larger distance');
 const bands = [{ min_distance_km: 0, max_distance_km: 5, fee: 200 }, { min_distance_km: 5, max_distance_km: 20, fee: 500 }];
 assert.equal(bandForDistance(1, bands)?.fee, 200, 'near fee');
 assert.equal(bandForDistance(farKm, bands)?.fee, 500, 'far fee');
+const quote = await calculateDeliveryQuote(STORE_ORIGIN.latitude, STORE_ORIGIN.longitude, 2500, 'cash', bands);
+assert.deepEqual({ distanceKm: quote?.distanceKm, deliveryFee: quote?.deliveryFee, subtotal: quote?.subtotal, total: quote?.total }, { distanceKm: 0, deliveryFee: 200, subtotal: 2500, total: 2700 });
 assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
@@ -31,4 +33,7 @@ assert.match(route, /INVALID_LOCATION|PRODUCT_UNAVAILABLE|DATABASE_UNAVAILABLE/,
 const migration = fs.readFileSync('supabase/migrations/20260812130000_atomic_checkout_and_product_columns.sql','utf8');
 for (const column of ['old_price','discount_starts_at','discount_ends_at','stock','is_active','track_inventory']) assert.match(migration, new RegExp(`add column if not exists ${column}`,'i'), `${column} reconciled`);
 assert.match(migration, /revoke all on function public\.create_checkout_order_atomic/, 'atomic RPC is server-only');
+const locationsMigration = fs.readFileSync('supabase/migrations/20260812140000_reconcile_delivery_locations.sql','utf8');
+for (const column of ['id','customer_id','label','address','latitude','longitude','delivery_fee','is_default','apartment','building','delivery_instructions','place_id','place_name','created_at','updated_at']) assert.match(locationsMigration, new RegExp(`\\b${column}\\b`), `${column} reconciled`);
+assert.match(locationsMigration, /notify pgrst, 'reload schema'/i, 'PostgREST schema cache reload requested');
 console.log('Checkout and delivery validation tests passed.');

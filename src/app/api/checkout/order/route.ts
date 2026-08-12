@@ -5,7 +5,7 @@ import { effectivePrice } from '@/lib/supabase';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { sendOrderEmail, type EmailOrder } from '@/lib/server/order-email';
 import { CheckoutCartError, hasCheckoutStock, normalizeCheckoutCart, unavailableProductIds } from '@/lib/checkout-cart';
-import { bandForDistance, deliveryDistanceKm, validCoordinates, type DeliveryBand } from '@/lib/server/delivery';
+import { calculateDeliveryQuote, validCoordinates, type DeliveryBand } from '@/lib/server/delivery';
 
 const failure = (code: string, message: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error: { code, message }, ...extra }, { status });
 const dbFailure = (operation: string, error: unknown) => { console.error(`[Checkout database] ${operation} failed`, error); return failure('DATABASE_UNAVAILABLE', 'Checkout is temporarily unavailable. Please try again.', 500); };
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
     if (bandsError) return dbFailure('delivery settings query', bandsError);
     let distanceKm: number | null = null, band: DeliveryBand | null = null;
     if (!pickup && verified) {
-      distanceKm = (await deliveryDistanceKm(latitude, longitude)).distanceKm;
-      band = bandForDistance(distanceKm, (bands || []) as DeliveryBand[]);
-      if (!band) return failure('OUTSIDE_DELIVERY_AREA', 'This location is outside our configured delivery area.', 422);
+      const quote = await calculateDeliveryQuote(latitude, longitude, subtotal, body.paymentMethod, (bands || []) as DeliveryBand[]);
+      if (!quote) return failure('OUTSIDE_DELIVERY_AREA', 'This location is outside our configured delivery area.', 422);
+      distanceKm = quote.distanceKm; band = quote.band;
     } else if (!pickup) {
       band = ((bands || []) as DeliveryBand[]).at(-1) || null;
       if (!band) return failure('DELIVERY_SETTINGS_UNAVAILABLE', 'Delivery pricing is not configured.', 503);
@@ -71,11 +71,12 @@ export async function POST(request: NextRequest) {
       if (error) return dbFailure('customer upsert', error); customerId = savedCustomer?.id || null;
       if (customerId && !pickup) {
         const { data: existing, error: lookupError } = await db.from('delivery_locations').select('id').eq('customer_id', customerId).eq('address', customer.address!.trim()).maybeSingle();
-        if (lookupError) return dbFailure('delivery location lookup', lookupError);
+        if (lookupError) console.error('[Checkout database] optional delivery location lookup failed', lookupError);
         if (existing) deliveryLocationId = existing.id;
-        else {
+        else if (!lookupError) {
           const { data: location, error: locationError } = await db.from('delivery_locations').insert({ customer_id: customerId, label: 'Saved from checkout', address: customer.address!.trim(), apartment: customer.apartment?.trim() || null, building: customer.building?.trim() || null, delivery_instructions: customer.deliveryInstructions?.trim() || null, latitude: verified ? latitude : null, longitude: verified ? longitude : null, place_id: customer.placeId || null, place_name: customer.placeName || null, is_default: false }).select('id').single();
-          if (locationError) return dbFailure('delivery location insert', locationError); deliveryLocationId = location?.id || null;
+          if (locationError) console.error('[Checkout database] optional delivery location insert failed', locationError);
+          else deliveryLocationId = location?.id || null;
         }
       }
     }

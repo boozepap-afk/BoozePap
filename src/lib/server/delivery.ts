@@ -44,3 +44,21 @@ export async function deliveryDistanceKm(latitude: number, longitude: number) {
 export function bandForDistance(distanceKm: number, bands: DeliveryBand[]) {
   return bands.find(band => distanceKm >= Number(band.min_distance_km) && (band.max_distance_km == null || distanceKm <= Number(band.max_distance_km))) || null;
 }
+
+export async function calculateDeliveryQuote(latitude: number, longitude: number, subtotal: number, paymentMethod: string, bands: DeliveryBand[]) {
+  if (!validCoordinates(latitude, longitude)) throw new Error('Invalid delivery coordinates.');
+  if (!Number.isFinite(subtotal) || subtotal < 0) throw new Error('Invalid checkout subtotal.');
+  const distance = await deliveryDistanceKm(latitude, longitude);
+  const band = bandForDistance(distance.distanceKm, bands);
+  if (!band) return null;
+  const deliveryFee = paymentMethod === 'pickup' || subtotal >= 10000 ? 0 : Number(band.fee);
+  if (!Number.isFinite(deliveryFee) || deliveryFee < 0) throw new Error('Configured delivery fee is invalid.');
+  return {
+    distanceKm: Number(distance.distanceKm.toFixed(2)),
+    deliveryFee,
+    subtotal,
+    total: subtotal + deliveryFee,
+    source: distance.source,
+    band,
+  };
+}
