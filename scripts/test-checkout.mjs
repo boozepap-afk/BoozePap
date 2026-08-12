@@ -36,4 +36,10 @@ assert.match(migration, /revoke all on function public\.create_checkout_order_at
 const locationsMigration = fs.readFileSync('supabase/migrations/20260812140000_reconcile_delivery_locations.sql','utf8');
 for (const column of ['id','customer_id','label','address','latitude','longitude','delivery_fee','is_default','apartment','building','delivery_instructions','place_id','place_name','created_at','updated_at']) assert.match(locationsMigration, new RegExp(`\\b${column}\\b`), `${column} reconciled`);
 assert.match(locationsMigration, /notify pgrst, 'reload schema'/i, 'PostgREST schema cache reload requested');
+const placeholderRoute = fs.readFileSync('src/app/placeholder-product.png/route.ts', 'utf8');
+assert.match(placeholderRoute, /Content-Type': 'image\/png'/, 'product placeholder route returns PNG content');
+assert.match(placeholderRoute, /Buffer\.from\(PLACEHOLDER_PNG, 'base64'\)/, 'text-only route decodes a PNG payload');
+const quoteRoute = fs.readFileSync('src/app/api/checkout/quote/route.ts', 'utf8');
+assert.match(quoteRoute, /delivery_settings.+eq\('is_active', true\)/s, 'quote reads active delivery settings');
+assert.match(quoteRoute, /distanceKm: quote\.distanceKm.+deliveryFee: quote\.deliveryFee.+subtotal: quote\.subtotal.+total: quote\.total/s, 'quote returns all totals');
 console.log('Checkout and delivery validation tests passed.');
