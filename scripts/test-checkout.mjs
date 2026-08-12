@@ -15,6 +15,7 @@ assert.equal(hasCheckoutStock({ stock:0, track_inventory:false }, 1), true);
 assert.deepEqual(STORE_ORIGIN, { latitude: -1.293053, longitude: 36.787758 });
 const pricing = deliveryPricingFromRow({ store_latitude:-1.293053, store_longitude:36.787758, base_fee:200, included_distance_km:3, price_per_km:40, maximum_distance_km:50, estimated_time:'30–60 minutes' });
 assert.ok(pricing);
+assert.deepEqual(deliveryPricingFromRow({ id:'default', name:'Default', fee:200, is_active:true }), { storeLatitude:-1.293053, storeLongitude:36.787758, baseFee:200, includedKm:3, pricePerKm:40, maximumKm:50, estimatedTime:'10–50 minutes' }, 'legacy active Default row receives production pricing defaults');
 assert.equal(haversineKm(STORE_ORIGIN.latitude, STORE_ORIGIN.longitude), 0, 'near Yaya Centre');
 const near = await calculateDeliveryQuote(-1.293053, 36.787758, 2500, true, pricing, { googleKey:'' });
 assert.deepEqual(near, { subtotal:2500, distanceKm:0, deliveryFee:200, total:2700, estimatedTime:'30–60 minutes', locationVerified:true }, 'absent Google key uses Haversine');

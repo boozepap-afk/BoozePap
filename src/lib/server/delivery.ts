@@ -15,13 +15,23 @@ export function validCoordinates(latitude: number, longitude: number) {
   return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
-const finite = (value: unknown) => { const number = Number(value); return Number.isFinite(number) ? number : null; };
+const finite = (value: unknown) => {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 
 /** Normalize the active row without requiring PostgREST to know optional columns. */
 export function deliveryPricingFromRow(row: Record<string, unknown>): DeliveryPricing | null {
-  const storeLatitude = finite(row.store_latitude), storeLongitude = finite(row.store_longitude);
-  const baseFee = finite(row.base_fee ?? row.fee), includedKm = finite(row.included_distance_km ?? row.min_distance_km);
-  const pricePerKm = finite(row.price_per_km), maximumKm = finite(row.maximum_distance_km ?? row.max_distance_km);
+  // Older BoozePap projects stored only the active Default band's `fee` and
+  // distance bounds. Keep that valid row usable with the production pricing
+  // defaults instead of treating optional configuration keys as an outage.
+  const storeLatitude = finite(row.store_latitude) ?? YAYA_CENTRE.latitude;
+  const storeLongitude = finite(row.store_longitude) ?? YAYA_CENTRE.longitude;
+  const baseFee = finite(row.base_fee ?? row.fee);
+  const includedKm = finite(row.included_distance_km) ?? 3;
+  const pricePerKm = finite(row.price_per_km) ?? 40;
+  const maximumKm = finite(row.maximum_distance_km ?? row.max_distance_km) ?? 50;
   if (storeLatitude == null || storeLongitude == null || !validCoordinates(storeLatitude, storeLongitude) || baseFee == null || baseFee < 0 || includedKm == null || includedKm < 0 || pricePerKm == null || pricePerKm < 0 || maximumKm == null || maximumKm <= 0) return null;
   const estimatedTime = String(row.estimated_time || `${finite(row.estimated_minutes_min) ?? 10}–${finite(row.estimated_minutes_max) ?? 50} minutes`);
   return { storeLatitude, storeLongitude, baseFee, includedKm, pricePerKm, maximumKm, estimatedTime };
