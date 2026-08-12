@@ -29,7 +29,10 @@ assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
-assert.match(route, /create_checkout_order_atomic/, 'order and items use atomic RPC');
+const createOrder = fs.readFileSync('src/lib/server/create-order.ts','utf8');
+assert.match(createOrder, /create_checkout_order_atomic/, 'order and items prefer atomic RPC');
+assert.match(createOrder, /PGRST202.+42883/s, 'missing atomic RPC is detected');
+assert.match(createOrder, /from\('orders'\)\.delete\(\)/, 'fallback rolls back its parent order when line creation fails');
 assert.match(route, /Promise\.allSettled\(emailTasks\)/, 'email failure cannot cancel saved order');
 assert.match(route, /console\.error\(`\[Checkout database\]/, 'full database errors are logged server-side');
 assert.doesNotMatch(route, /details:\s*productsError\.message/, 'database details are not returned');

@@ -6,6 +6,7 @@ import { sendOrderEmail, type EmailOrder } from '@/lib/server/order-email';
 import { CheckoutCartError, hasCheckoutStock, normalizeCheckoutCart, unavailableProductIds } from '@/lib/checkout-cart';
 import { calculateDeliveryQuote, validCoordinates, type DeliveryPricing } from '@/lib/server/delivery';
 import { getActiveDeliveryPricing } from '@/lib/server/delivery-settings';
+import { createOrderWithItems } from '@/lib/server/create-order';
 
 const failure = (code: string, message: string, status: number, extra: Record<string, unknown> = {}) => NextResponse.json({ error: { code, message }, ...extra }, { status });
 const orderNumberForLog = () => `order-${Date.now().toString(36)}`;
@@ -66,7 +67,8 @@ export async function POST(request: NextRequest) {
     let customerId: string | null = null, deliveryLocationId: string | null = null;
     if (authData.user) {
       const { data: savedCustomer, error } = await db.from('customers').upsert({ user_id: authData.user.id, full_name: customer.name.trim(), email: customer.email?.trim() || authData.user.email || null, phone: customer.phone }, { onConflict: 'user_id' }).select('id').single();
-      if (error) return dbFailure('customer upsert', error); customerId = savedCustomer?.id || null;
+      if (error) console.error('[Checkout database] optional customer profile save failed', error);
+      else customerId = savedCustomer?.id || null;
       if (customerId && !pickup) {
         const { data: existing, error: lookupError } = await db.from('delivery_locations').select('id').eq('customer_id', customerId).eq('address', customer.address!.trim()).maybeSingle();
         if (lookupError) console.error('[Checkout database] optional delivery location lookup failed', lookupError);
@@ -80,9 +82,9 @@ export async function POST(request: NextRequest) {
     }
 
     const orderPayload = { customer_id: customerId, delivery_location_id: deliveryLocationId, order_number: orderNumber, customer_name: customer.name.trim(), customer_email: customer.email?.trim() || null, customer_phone: customer.phone, delivery_address: customer.address?.trim() || 'Store pickup', gps_lat: verified ? latitude : null, gps_lng: verified ? longitude : null, delivery_place_id: customer.placeId || null, delivery_place_name: customer.placeName || null, delivery_location_verified: verified, delivery_instructions: customer.deliveryInstructions?.trim() || null, gift_note: body.giftNote?.trim() || null, payment_method: body.paymentMethod, payment_status: paymentStatus, status: body.paymentMethod === 'mpesa' ? 'pending_payment' : 'pending', subtotal, delivery_fee: deliveryFee, delivery_distance_km: distanceKm == null ? null : Number(distanceKm.toFixed(2)), discount_total: 0, total };
-    const { data: atomicRows, error: orderError } = await db.rpc('create_checkout_order_atomic', { order_payload: orderPayload, items_payload: items });
-    const order = Array.isArray(atomicRows) ? atomicRows[0] : atomicRows;
-    if (orderError || !order) return dbFailure('create_checkout_order_atomic RPC', orderError || new Error('RPC returned no order'));
+    const created = await createOrderWithItems(db, orderPayload, items);
+    const order = created.order;
+    if (created.error || !order) return dbFailure('order and items creation', created.error || new Error('Order creation returned no order'));
 
     const orderLines = items.map(item => `${item.quantity} × ${item.product_name} — KES ${item.line_total.toLocaleString('en-KE')}`).join('\n');
     const summary = `Order ${order.order_number}\nCustomer: ${customer.name}\nPhone: ${customer.phone}\nAddress: ${customer.address}\nDistance: ${distanceKm == null ? 'unverified' : `${distanceKm.toFixed(2)} km`}\nDelivery: KES ${deliveryFee.toLocaleString('en-KE')}\nTotal: KES ${total.toLocaleString('en-KE')}\n\nProducts:\n${orderLines}`;
