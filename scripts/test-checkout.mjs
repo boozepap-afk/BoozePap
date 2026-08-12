@@ -15,4 +15,10 @@ assert.equal(hasCheckoutStock({}, 1), true, 'missing stock column does not rejec
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
 assert.match(route, /productsError[\s\S]*status: 500/, 'Supabase product query failure is a server error');
 assert.match(route, /variantsError[\s\S]*status: 500/, 'Supabase variant query failure is a server error');
+assert.doesNotMatch(route, /details:\s*productsError\.message/, 'product database details are not returned');
+assert.doesNotMatch(route, /details:\s*variantsError\.message/, 'variant database details are not returned');
+assert.doesNotMatch(route, /error instanceof Error \? error\.message/, 'unexpected server errors are not returned');
+const migration = fs.readFileSync('supabase/migrations/20260812120000_reconcile_products_old_price.sql','utf8');
+assert.match(migration, /add column if not exists old_price numeric\(12,2\) null/i, 'old_price is restored additively');
+assert.match(migration, /check \(old_price >= 0\)/i, 'old_price cannot be negative and may remain NULL');
 console.log('Checkout validation tests passed.');
