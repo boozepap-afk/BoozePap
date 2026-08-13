@@ -76,6 +76,9 @@ export default function OrdersPage() {
       if (payload.eventType === 'DELETE') { const id = String((payload.old as { id?: string }).id || ''); setOrders(current => current.filter(order => order.id !== id)); return; }
       const id = String((payload.new as { id?: string }).id || ''); if (!id) return;
       const order = await fetchOrder(id); if (!order) return; mergeOrder(order); setLastRefreshed(new Date());
+    }).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_items' }, async payload => {
+      const orderId = String((payload.new as { order_id?: string }).order_id || ''); if (!orderId) return;
+      const order = await fetchOrder(orderId); if (!order) return; mergeOrder(order); setLastRefreshed(new Date());
     }).subscribe(state => { if (state === 'SUBSCRIBED') setConnection('live'); else if (state === 'CHANNEL_ERROR' || state === 'TIMED_OUT') setConnection('polling'); else if (state === 'CLOSED') setConnection('error'); });
     const poll = window.setInterval(() => void load(true), 12000);
     const visible = () => { if (document.visibilityState === 'visible') void load(true); };

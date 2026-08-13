@@ -32,7 +32,13 @@ export async function createOrderWithItems(db: SupabaseClient, orderPayload: Rec
   const inserted = await db.from('orders').insert(compatiblePayload).select('id,order_number,checkout_token').single();
   if (inserted.error || !inserted.data) { logDatabaseError('ORDER_INSERT', 'fallback order insert', inserted.error); return { order: null, error: inserted.error, method: 'fallback' as const }; }
   const itemsResult = await db.from('order_items').insert(items.map(item => ({ ...item, order_id: inserted.data.id })));
-  if (!itemsResult.error) return { order: inserted.data as OrderResult, error: null, method: 'fallback' as const };
+  if (!itemsResult.error) {
+    // The fallback uses two PostgREST statements. Touch the parent only after
+    // every line is stored so admin realtime fetches the complete order.
+    const visible = await db.from('orders').update({ updated_at: new Date().toISOString() }).eq('id', inserted.data.id);
+    if (visible.error) logDatabaseError('ORDER_INSERT', 'admin realtime visibility update', visible.error);
+    return { order: inserted.data as OrderResult, error: null, method: 'fallback' as const };
+  }
 
   logDatabaseError('ORDER_ITEMS_INSERT', 'fallback order items insert', itemsResult.error);
   const rollback = await db.from('orders').delete().eq('id', inserted.data.id);
