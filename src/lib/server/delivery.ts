@@ -26,10 +26,10 @@ export function deliveryPricingFromRow(row: Record<string, unknown>): DeliveryPr
   // Older BoozePap projects stored only the active Default band's `fee` and
   // distance bounds. Keep that valid row usable with the production pricing
   // defaults instead of treating optional configuration keys as an outage.
-  const storeLatitude = finite(row.origin_latitude ?? row.store_latitude) ?? YAYA_CENTRE.latitude;
-  const storeLongitude = finite(row.origin_longitude ?? row.store_longitude) ?? YAYA_CENTRE.longitude;
-  const baseFee = finite(row.base_fee ?? row.delivery_fee ?? row.fee);
-  const includedKm = finite(row.included_km ?? row.included_distance_km) ?? 3;
+  const storeLatitude = finite(row.store_latitude) ?? YAYA_CENTRE.latitude;
+  const storeLongitude = finite(row.store_longitude) ?? YAYA_CENTRE.longitude;
+  const baseFee = finite(row.base_fee ?? row.fee);
+  const includedKm = finite(row.included_distance_km) ?? 3;
   const pricePerKm = finite(row.price_per_km) ?? 40;
   const maximumKm = finite(row.maximum_distance_km ?? row.max_distance_km) ?? 50;
   if (storeLatitude == null || storeLongitude == null || !validCoordinates(storeLatitude, storeLongitude) || baseFee == null || baseFee < 0 || includedKm == null || includedKm < 0 || pricePerKm == null || pricePerKm < 0 || maximumKm == null || maximumKm <= 0) return null;

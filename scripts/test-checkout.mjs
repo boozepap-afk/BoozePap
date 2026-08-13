@@ -31,6 +31,8 @@ assert.deepEqual(unavailableProductIds([a,b], [{ id:a, is_active:true }]), [b], 
 assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
+const checkoutClient = fs.readFileSync('src/components/CheckoutClient.tsx','utf8');
+assert.doesNotMatch(checkoutClient, /Distance from Yaya Centre:/, 'checkout does not expose origin distance to customers');
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
 assert.match(route, /status: orderStatus/, 'order insert uses the shared valid order status');
 assert.match(route, /orderId: order\.id.+subtotal.+deliveryFee.+total/s, 'successful order returns authoritative totals');
