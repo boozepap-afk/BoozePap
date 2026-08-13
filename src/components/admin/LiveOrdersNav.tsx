@@ -3,13 +3,14 @@
 import { ClipboardList } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase-browser';
+import { UNREVIEWED_ORDER_STATUSES } from '@/lib/order-status';
 
 export function LiveOrdersNav() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const [count, setCount] = useState(0);
   const refresh = useCallback(async () => {
     if (!supabase) return;
-    const { count: total } = await supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', ['pending', 'pending_payment', 'paid']);
+    const { count: total } = await supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', [...UNREVIEWED_ORDER_STATUSES]);
     setCount(total || 0);
   }, [supabase]);
   useEffect(() => {

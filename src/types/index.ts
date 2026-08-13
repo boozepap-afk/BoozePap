@@ -23,4 +23,4 @@ export type Category = {
   color: string;
 };
 
-export type OrderStatus = 'pending' | 'paid' | 'packing' | 'out_for_delivery' | 'completed' | 'cancelled' | 'refunded';
+export type { OrderStatus } from '@/lib/order-status';
