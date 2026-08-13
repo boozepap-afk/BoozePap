@@ -174,4 +174,5 @@ export async function getSiteContent(): Promise<SiteContent> {
 
 export const money = (value: number) => `KES ${Number(value).toLocaleString('en-KE')}`;
 export function effectivePrice(item: { price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string }) { const now = Date.now(), active = Boolean(item.old_price && item.old_price > item.price && (!item.discount_starts_at || Date.parse(item.discount_starts_at) <= now) && (!item.discount_ends_at || Date.parse(item.discount_ends_at) > now)); return { price: active ? item.price : item.old_price || item.price, oldPrice: active ? item.old_price : undefined, active }; }
-export const imageFor = (product: DbProduct) => product.image_url || product.gallery_urls?.[0] || '/placeholder-product.png';
+export const PRODUCT_IMAGE_PLACEHOLDER = '/placeholder-product.png';
+export const imageFor = (product: DbProduct) => product.image_url || product.gallery_urls?.[0] || PRODUCT_IMAGE_PLACEHOLDER;

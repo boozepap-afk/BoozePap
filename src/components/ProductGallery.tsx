@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { SmartImage } from '@/components/SmartImage';
+import { PRODUCT_IMAGE_PLACEHOLDER } from '@/lib/supabase';
 
 export function ProductGallery({ images, name }: { images: string[]; name: string }) {
   const [active, setActive] = useState(0);
-  const current = images[active] || '/placeholder-product.png';
+  const current = images[active] || PRODUCT_IMAGE_PLACEHOLDER;
   return <div className="min-w-0">
     <div className="group relative aspect-square min-h-[20rem] overflow-hidden rounded-2xl bg-white ring-1 ring-orange-100">
       <SmartImage src={current} alt={name} sizes="(max-width: 768px) 92vw, 420px" fit="contain" priority quality={94} className="p-3 transition-transform duration-500 ease-out md:group-hover:scale-110" />
