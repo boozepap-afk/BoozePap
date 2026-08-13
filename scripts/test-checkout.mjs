@@ -58,6 +58,10 @@ const statusMigration = fs.readFileSync('supabase/migrations/20260813090000_reco
 assert.match(statusMigration, /add constraint orders_status_check check \(status in/i, 'order status constraint has valid PostgreSQL CHECK syntax');
 for (const status of ORDER_STATUSES) assert.match(statusMigration, new RegExp(`'${status}'`), `${status} is accepted by the database constraint`);
 assert.doesNotMatch(statusMigration, /pending_payment/, 'payment-only pending_payment is not accepted as an order status');
+const checkoutSchemaMigration = fs.readFileSync('supabase/migrations/20260813110000_reconcile_atomic_checkout_schema.sql','utf8');
+for (const column of ['order_number','customer_name','customer_email','customer_phone','checkout_token','payment_status','delivery_place_id','delivery_place_name','delivery_location_verified','delivery_instructions','delivery_distance_km','updated_at']) assert.match(checkoutSchemaMigration, new RegExp(`add column if not exists ${column}`,'i'), `${column} reconciled for order persistence`);
+assert.match(checkoutSchemaMigration, /create or replace function public\.create_checkout_order_atomic/, 'atomic checkout RPC is recreated after schema reconciliation');
+assert.match(checkoutSchemaMigration, /revoke all on function public\.create_checkout_order_atomic[^;]+from public, anon, authenticated/s, 'atomic checkout RPC remains server-only');
 const migration = fs.readFileSync('supabase/migrations/20260812130000_atomic_checkout_and_product_columns.sql','utf8');
 for (const column of ['old_price','discount_starts_at','discount_ends_at','stock','is_active','track_inventory']) assert.match(migration, new RegExp(`add column if not exists ${column}`,'i'), `${column} reconciled`);
 assert.match(migration, /revoke all on function public\.create_checkout_order_atomic/, 'atomic RPC is server-only');
