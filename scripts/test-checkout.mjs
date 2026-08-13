@@ -49,6 +49,10 @@ assert.match(route, /Promise\.allSettled\(emailTasks\)/, 'email failure cannot c
 assert.match(route, /console\.error\(`\[Checkout database\]/, 'full database errors are logged server-side');
 assert.doesNotMatch(route, /details:\s*productsError\.message/, 'database details are not returned');
 assert.match(route, /INVALID_LOCATION|PRODUCT_UNAVAILABLE|DATABASE_UNAVAILABLE/, 'structured error codes');
+const statusMigration = fs.readFileSync('supabase/migrations/20260813090000_reconcile_order_status_constraint.sql','utf8');
+assert.match(statusMigration, /add constraint orders_status_check check \(status in/i, 'order status constraint has valid PostgreSQL CHECK syntax');
+for (const status of ORDER_STATUSES) assert.match(statusMigration, new RegExp(`'${status}'`), `${status} is accepted by the database constraint`);
+assert.doesNotMatch(statusMigration, /pending_payment/, 'payment-only pending_payment is not accepted as an order status');
 const migration = fs.readFileSync('supabase/migrations/20260812130000_atomic_checkout_and_product_columns.sql','utf8');
 for (const column of ['old_price','discount_starts_at','discount_ends_at','stock','is_active','track_inventory']) assert.match(migration, new RegExp(`add column if not exists ${column}`,'i'), `${column} reconciled`);
 assert.match(migration, /revoke all on function public\.create_checkout_order_atomic/, 'atomic RPC is server-only');
