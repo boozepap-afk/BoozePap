@@ -7,7 +7,7 @@ alter table public.orders add column if not exists payment_status text not null 
 alter table public.orders drop constraint if exists orders_payment_status_check;
 alter table public.orders add constraint orders_payment_status_check check (payment_status in ('pending','pending_payment','paid','failed','cancelled','timed_out','refunded','cash_due'));
 alter table public.orders drop constraint if exists orders_status_check;
-alter table public.orders add constraint orders_status_check check (status in ('pending','pending_payment','confirmed','processing','dispatched','delivered','paid','packing','out_for_delivery','completed','cancelled','refunded'));
+alter table public.orders add constraint orders_status_check check (status in ('pending','awaiting_payment','paid','confirmed','preparing','ready_for_dispatch','dispatched','delivered','cancelled'));
 create unique index if not exists orders_order_number_key on public.orders(order_number) where order_number is not null;
 create unique index if not exists orders_checkout_token_key on public.orders(checkout_token);
 
