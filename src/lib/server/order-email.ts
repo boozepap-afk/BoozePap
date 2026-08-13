@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { deliverEmail } from '@/lib/server/resend-email';
+import { deliverEmail } from '@/lib/server/email-transport';
 
 const SITE_URL = 'https://boozepap.com';
 const MAX_ATTEMPTS = 3;

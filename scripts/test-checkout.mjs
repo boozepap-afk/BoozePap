@@ -33,6 +33,14 @@ assert.equal(validCoordinates(91, 0), false);
 
 const checkoutClient = fs.readFileSync('src/components/CheckoutClient.tsx','utf8');
 assert.doesNotMatch(checkoutClient, /Distance from Yaya Centre:/, 'checkout does not expose origin distance to customers');
+const emailTransport = fs.readFileSync('src/lib/server/email-transport.ts','utf8');
+assert.match(emailTransport, /smtp\.gmail\.com/, 'Gmail transport uses Gmail SMTP');
+assert.match(emailTransport, /port: 465, secure: true/, 'Gmail transport uses implicit TLS');
+assert.match(emailTransport, /config\.provider === 'gmail'/, 'EMAIL_PROVIDER selects Gmail or Resend');
+assert.match(emailTransport, /import 'server-only'/, 'email credentials remain server-only');
+const adminEmailRoute = fs.readFileSync('src/app/api/admin/email/route.ts','utf8');
+assert.match(adminEmailRoute, /provider: config\.provider/, 'admin test reports the selected provider safely');
+assert.doesNotMatch(adminEmailRoute, /gmailAppPassword|resendApiKey/, 'admin API never returns provider credentials');
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
 assert.match(route, /status: orderStatus/, 'order insert uses the shared valid order status');
 assert.match(route, /orderId: order\.id.+subtotal.+deliveryFee.+total/s, 'successful order returns authoritative totals');
