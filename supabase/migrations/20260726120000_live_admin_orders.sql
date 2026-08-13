@@ -14,7 +14,4 @@ end $$;
 
 -- Keep the established status values and allow the complete admin workflow.
 alter table public.orders drop constraint if exists orders_status_check;
-alter table public.orders add constraint orders_status_check check (status in (
-  'pending','pending_payment','paid','accepted','confirmed','processing','dispatched',
-  'delivered','rejected','cancelled','packing','out_for_delivery','completed','refunded'
-));
+alter table public.orders add constraint orders_status_check check (status in ('pending','awaiting_payment','paid','confirmed','preparing','ready_for_dispatch','dispatched','delivered','cancelled'))

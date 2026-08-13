@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase-browser';
 import { money } from '@/lib/supabase';
 import { getCurrentAdmin } from '@/lib/admin-auth';
+import { ORDER_STATUSES, ORDER_STATUS_TRANSITIONS, UNREVIEWED_ORDER_STATUSES, orderStatusLabel } from '@/lib/order-status';
 
 type Order = {
   id: string; order_number?: string; created_at: string; updated_at?: string;
@@ -16,11 +17,11 @@ type Order = {
 
 type Connection = 'connecting' | 'live' | 'polling' | 'error';
 const PAGE_SIZE = 20;
-const unreviewedStatuses = new Set(['pending', 'pending_payment', 'paid']);
-const statusOptions = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'rejected', 'cancelled'];
-const transitions: Record<string, string[]> = { pending: ['confirmed','rejected','cancelled'], pending_payment: ['confirmed','rejected','cancelled'], paid: ['confirmed','rejected','cancelled'], accepted: ['processing','out_for_delivery','rejected','cancelled'], confirmed: ['processing','out_for_delivery','rejected','cancelled'], processing: ['out_for_delivery','rejected','cancelled'], dispatched: ['delivered','cancelled'], out_for_delivery: ['delivered','cancelled'], delivered: [], rejected: [], cancelled: [] };
-const statusLabel = (value: string) => value === 'pending' || value === 'pending_payment' ? 'New' : value === 'accepted' ? 'Confirmed' : value === 'out_for_delivery' ? 'Out for delivery' : value;
-const statusClass = (value: string) => ({ pending: 'bg-blue-100 text-blue-800', pending_payment: 'bg-amber-100 text-amber-800', paid: 'bg-blue-100 text-blue-800', confirmed: 'bg-indigo-100 text-indigo-800', accepted: 'bg-indigo-100 text-indigo-800', processing: 'bg-purple-100 text-purple-800', dispatched: 'bg-orange-100 text-orange-800', out_for_delivery: 'bg-orange-100 text-orange-800', delivered: 'bg-green-100 text-green-800', rejected: 'bg-red-100 text-red-800', cancelled: 'bg-neutral-200 text-neutral-700' }[value] || 'bg-neutral-100 text-neutral-700');
+const unreviewedStatuses = new Set(UNREVIEWED_ORDER_STATUSES);
+const statusOptions: readonly string[] = ORDER_STATUSES;
+const transitions: Record<string, readonly string[]> = ORDER_STATUS_TRANSITIONS;
+const statusLabel = (value: string) => orderStatusLabel(value as any);
+const statusClass = (value: string) => ({ pending: 'bg-blue-100 text-blue-800', awaiting_payment: 'bg-amber-100 text-amber-800', paid: 'bg-blue-100 text-blue-800', confirmed: 'bg-indigo-100 text-indigo-800', preparing: 'bg-purple-100 text-purple-800', ready_for_dispatch: 'bg-orange-100 text-orange-800', dispatched: 'bg-orange-100 text-orange-800', delivered: 'bg-green-100 text-green-800', cancelled: 'bg-neutral-200 text-neutral-700' }[value] || 'bg-neutral-100 text-neutral-700');
 
 export default function OrdersPage() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -84,7 +85,7 @@ export default function OrdersPage() {
 
   function acknowledge(id: string) { acknowledged.current.add(id); localStorage.setItem('chupahub-acknowledged-orders', JSON.stringify([...acknowledged.current].slice(-500))); setAlertOrder(current => current?.id === id ? null : current); }
   async function changeStatus(order: Order, nextStatus: string) {
-    if ((nextStatus === 'rejected' || nextStatus === 'cancelled') && !window.confirm(`${nextStatus === 'rejected' ? 'Reject' : 'Cancel'} order ${order.order_number || order.id}?`)) return;
+    if ((nextStatus === 'cancelled') && !window.confirm(`${'Cancel'} order ${order.order_number || order.id}?`)) return;
     if (!supabase) return; setNotice(''); setError('');
     const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch(`/api/admin/orders/${order.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ status: nextStatus }) });
@@ -95,11 +96,11 @@ export default function OrdersPage() {
   }
 
   const filtered = orders.filter(order => {
-    const matchesStatus = !status || order.status === status || (status === 'pending' && ['pending_payment', 'paid'].includes(order.status)) || (status === 'confirmed' && order.status === 'accepted');
+    const matchesStatus = !status || order.status === status || (status === 'pending' && ['awaiting_payment', 'paid'].includes(order.status));
     return matchesStatus && `${order.order_number || ''} ${order.customer_name || ''} ${order.customer_phone || ''}`.toLowerCase().includes(query.toLowerCase());
   });
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)), visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const unreviewed = orders.filter(order => unreviewedStatuses.has(order.status) && !acknowledged.current.has(order.id)).length;
+  const unreviewed = orders.filter(order => unreviewedStatuses.has(order.status as any) && !acknowledged.current.has(order.id)).length;
   useEffect(() => setPage(1), [query, status]);
 
   return <main className="mx-auto max-w-7xl p-3 sm:p-5">
