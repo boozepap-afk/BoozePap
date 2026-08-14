@@ -31,8 +31,18 @@ assert.deepEqual(unavailableProductIds([a,b], [{ id:a, is_active:true }]), [b], 
 assert.equal(validCoordinates(0, 0), true);
 assert.equal(validCoordinates(91, 0), false);
 
+const siteNavigation = fs.readFileSync('src/components/Site.tsx','utf8');
+assert.doesNotMatch(siteNavigation, /primaryLinks = \[\['Shop','\/shop'\]/, 'primary navigation does not show the Shop link');
 const checkoutClient = fs.readFileSync('src/components/CheckoutClient.tsx','utf8');
 assert.doesNotMatch(checkoutClient, /Distance from Yaya Centre:/, 'checkout does not expose origin distance to customers');
+const emailTransport = fs.readFileSync('src/lib/server/email-transport.ts','utf8');
+assert.match(emailTransport, /smtp\.gmail\.com/, 'Gmail transport uses Gmail SMTP');
+assert.match(emailTransport, /port: 465, secure: true/, 'Gmail transport uses implicit TLS');
+assert.match(emailTransport, /config\.provider === 'gmail'/, 'EMAIL_PROVIDER selects Gmail or Resend');
+assert.match(emailTransport, /import 'server-only'/, 'email credentials remain server-only');
+const adminEmailRoute = fs.readFileSync('src/app/api/admin/email/route.ts','utf8');
+assert.match(adminEmailRoute, /provider: config\.provider/, 'admin test reports the selected provider safely');
+assert.doesNotMatch(adminEmailRoute, /gmailAppPassword|resendApiKey/, 'admin API never returns provider credentials');
 const route = fs.readFileSync('src/app/api/checkout/order/route.ts','utf8');
 assert.match(route, /status: orderStatus/, 'order insert uses the shared valid order status');
 assert.match(route, /orderId: order\.id.+subtotal.+deliveryFee.+total/s, 'successful order returns authoritative totals');
@@ -58,6 +68,9 @@ const statusMigration = fs.readFileSync('supabase/migrations/20260813090000_reco
 assert.match(statusMigration, /add constraint orders_status_check check \(status in/i, 'order status constraint has valid PostgreSQL CHECK syntax');
 for (const status of ORDER_STATUSES) assert.match(statusMigration, new RegExp(`'${status}'`), `${status} is accepted by the database constraint`);
 assert.doesNotMatch(statusMigration, /pending_payment/, 'payment-only pending_payment is not accepted as an order status');
+const typedRpcMigration = fs.readFileSync('supabase/migrations/20260813120000_fix_atomic_checkout_typed_values.sql','utf8');
+assert.match(typedRpcMigration, /jsonb_populate_record\(null::public\.orders, order_payload\)/, 'RPC converts JSON values to live order column types');
+assert.match(typedRpcMigration, /typed_order\.status/, 'RPC inserts the typed order status rather than raw JSON text');
 const checkoutSchemaMigration = fs.readFileSync('supabase/migrations/20260813110000_reconcile_atomic_checkout_schema.sql','utf8');
 for (const column of ['order_number','customer_name','customer_email','customer_phone','checkout_token','payment_status','delivery_place_id','delivery_place_name','delivery_location_verified','delivery_instructions','delivery_distance_km','updated_at']) assert.match(checkoutSchemaMigration, new RegExp(`add column if not exists ${column}`,'i'), `${column} reconciled for order persistence`);
 assert.match(checkoutSchemaMigration, /create or replace function public\.create_checkout_order_atomic/, 'atomic checkout RPC is recreated after schema reconciliation');
