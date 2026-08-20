@@ -84,13 +84,15 @@ export async function POST(request: NextRequest) {
     const summary = `Order ${order.order_number}\nCustomer: ${customer.name}\nPhone: ${customer.phone}\nAddress: ${customer.address}\nDistance: ${distanceKm == null ? 'unverified' : `${distanceKm.toFixed(2)} km`}\nDelivery: KES ${deliveryFee.toLocaleString('en-KE')}\nTotal: KES ${total.toLocaleString('en-KE')}\n\nProducts:\n${orderLines}`;
     const { error: notificationError } = await db.from('admin_notifications').insert({ order_id: order.id, kind: 'new_order', title: `New order ${order.order_number}`, body: summary });
     if (notificationError) console.error('[Checkout notification] admin notification failed after order creation', notificationError);
-    const emailOrder: EmailOrder = { id: order.id, orderNumber: order.order_number, customerName: customer.name.trim(), customerEmail: customer.email?.trim() || null, customerPhone: customer.phone, deliveryAddress: customer.address?.trim() || 'Store pickup', paymentMethod: body.paymentMethod, subtotal, deliveryFee, total, estimatedDelivery: pickup ? 'Ready-time confirmation will follow' : estimatedTime, items: items.map(item => ({ name: item.product_name, quantity: item.quantity, unitPrice: item.unit_price, lineTotal: item.line_total })) };
-    const emailTasks: Array<Promise<unknown>> = [];
-    if (emailOrder.customerEmail) emailTasks.push(sendOrderEmail(db, emailOrder, 'placed', emailOrder.customerEmail));
-    if (process.env.ADMIN_ORDER_EMAIL) emailTasks.push(sendOrderEmail(db, emailOrder, 'new_order_admin', process.env.ADMIN_ORDER_EMAIL));
-    if (!emailTasks.length) console.warn('[Checkout] EMAIL_NOTIFICATION skipped: no configured recipients', { requestId, orderId: order.id });
-    const emailResults = await Promise.allSettled(emailTasks);
-    emailResults.forEach(result => { if (result.status === 'rejected') console.error('[Checkout] EMAIL_NOTIFICATION failed after order creation', { requestId, orderId: order.id, error: result.reason }); });
+    if (body.paymentMethod !== 'mpesa') {
+      const emailOrder: EmailOrder = { id: order.id, orderNumber: order.order_number, customerName: customer.name.trim(), customerEmail: customer.email?.trim() || null, customerPhone: customer.phone, deliveryAddress: customer.address?.trim() || 'Store pickup', paymentMethod: body.paymentMethod, subtotal, deliveryFee, total, estimatedDelivery: pickup ? 'Ready-time confirmation will follow' : estimatedTime, items: items.map(item => ({ name: item.product_name, quantity: item.quantity, unitPrice: item.unit_price, lineTotal: item.line_total })) };
+      const emailTasks: Array<Promise<unknown>> = [];
+      if (emailOrder.customerEmail) emailTasks.push(sendOrderEmail(db, emailOrder, 'placed', emailOrder.customerEmail));
+      if (process.env.ADMIN_ORDER_EMAIL) emailTasks.push(sendOrderEmail(db, emailOrder, 'new_order_admin', process.env.ADMIN_ORDER_EMAIL));
+      if (!emailTasks.length) console.warn('[Checkout] EMAIL_NOTIFICATION skipped: no configured recipients', { requestId, orderId: order.id });
+      const emailResults = await Promise.allSettled(emailTasks);
+      emailResults.forEach(result => { if (result.status === 'rejected') console.error('[Checkout] EMAIL_NOTIFICATION failed after order creation', { requestId, orderId: order.id, error: result.reason }); });
+    }
 
     if (body.paymentMethod === 'mpesa') {
       const phone = kenyaPhone(customer.phone);

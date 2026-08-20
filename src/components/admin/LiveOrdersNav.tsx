@@ -13,7 +13,7 @@ export function LiveOrdersNav() {
     if (!supabase) return;
     const [{ count: total }, { count: ready }] = await Promise.all([
       supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', [...UNREVIEWED_ORDER_STATUSES]),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'ready_for_dispatch'),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', ['pending','paid','confirmed','preparing','ready_for_dispatch']),
     ]);
     setCount(total || 0);
     setDispatchCount(ready || 0);
