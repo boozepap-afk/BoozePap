@@ -70,6 +70,11 @@ body {
 @media (min-width: 1280px) {
   .product-rail-grid > * { flex-basis: calc((100% - 3.75rem) / 6); }
 }
+.product-rail-grid > * > div:first-child { height: 12rem; }
+.product-rail-grid > * > div:first-child img { padding: .125rem; }
+@media (min-width: 640px) {
+  .product-rail-grid > * > div:first-child { height: 14rem; }
+}
 @keyframes brand-partnership-scroll {
   from { transform: translateX(100%); }
   to { transform: translateX(-100%); }
