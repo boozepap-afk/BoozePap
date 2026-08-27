@@ -6,17 +6,17 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          orange: '#B11226',
-          deep: '#8B0000',
-          soft: '#F7F4EE',
-          ink: '#0B0B0B',
+          orange: '#D94A57',
+          deep: '#B92F3D',
+          soft: '#FFF8F6',
+          ink: '#241A1A',
           gold: '#C9A227',
-          lightGold: '#E2C15A',
+          lightGold: '#E8CD72',
         },
       },
       boxShadow: {
-        orange: '0 18px 45px rgba(177, 18, 38, .18)',
-        card: '0 12px 28px rgba(33, 20, 15, .12)',
+        orange: '0 16px 36px rgba(185, 47, 61, .14)',
+        card: '0 10px 24px rgba(33, 20, 15, .09)',
       },
     },
   },
