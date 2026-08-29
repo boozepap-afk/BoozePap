@@ -72,10 +72,21 @@ body {
   .product-rail-grid > * { flex-basis: calc((100% - 3rem) / 5); }
 }
 .product-rail-grid > * > div:first-child { height: 10.5rem; }
-.product-rail-grid > * > div:first-child img { padding: .125rem; }
+.product-rail-grid > * > div:first-child img { padding: .35rem .45rem .25rem; }
 @media (min-width: 640px) {
   .product-rail-grid > * > div:first-child { height: 12rem; }
 }
+
+/* Product artwork must behave like the manually prepared BoozePap images:
+   full bottle/can visible, centered, uncropped and sitting on clean white. */
+a[href^="/product/"] > div.relative.bg-white img.object-contain,
+a[href^="/product/"] > div.relative[class*="bg-white"] img.object-contain {
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: #FFFFFF;
+  padding: .35rem .45rem .25rem !important;
+}
+
 @keyframes brand-partnership-scroll {
   from { transform: translateX(100%); }
   to { transform: translateX(-100%); }
