@@ -5,6 +5,7 @@ import { HeroCarousel } from '@/components/HeroCarousel';
 import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, getTopSellingProductIds, money } from '@/lib/supabase';
 import { categoryCanonicalPath, categorySlug } from '@/lib/public-urls';
 import { DEFAULT_DESCRIPTION } from '@/lib/seo';
+import { withStrongProductCategoryImages } from '@/lib/category-images';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -20,6 +21,7 @@ export default async function Home() {
   const [categories, banners, products, promotions, content, configuredSections, topSellingIds] = await Promise.all([
     getCategories(), getBanners(), getProducts(), getPromotions(), getSiteContent(), getHomepageSections(), getTopSellingProductIds(24),
   ]);
+  const displayCategories = withStrongProductCategoryImages(categories, products);
   const topSelling = topSellingIds.map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
   const flaggedTopSelling = products.filter(product => product.is_top_seller || product.is_featured);
   const sections = configuredSections.map(section => {
@@ -44,7 +46,7 @@ export default async function Home() {
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 
   return <main>
-    <HeroCarousel banners={banners} categories={categories} />
+    <HeroCarousel banners={banners} categories={displayCategories} />
     {promotions.length > 0 && <section className="mx-auto grid max-w-none gap-3 px-4 pt-5 md:grid-cols-2">
       {promotions.map((promotion) => <Link key={promotion.id} href={promotionHref(promotion)} className="orange-gradient flex items-center justify-between rounded-2xl p-5 text-white shadow-orange">
         <div><p className="text-xs font-black uppercase tracking-widest">{promotion.badge_text || promotion.code || 'Promotion'}</p><h2 className="text-2xl font-black">{promotion.title}</h2><p className="mt-1 text-sm text-white/85">{promotion.description}</p></div>

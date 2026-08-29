@@ -23,6 +23,23 @@ const commonProductCountries = ['Argentina', 'Australia', 'Chile', 'France', 'Ge
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type ProductImageStatus = 'idle' | 'processing' | 'uploading' | 'complete' | 'error';
+const ADMIN_PRODUCT_PAGE_SIZE = 1000;
+
+async function loadAllAdminProducts(supabase: NonNullable<ReturnType<typeof createBrowserSupabase>>) {
+  const products: Product[] = [];
+  for (let from = 0; ; from += ADMIN_PRODUCT_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id,name,slug,description,tasting_notes,pairing_suggestions,country,bottle_size,grape_variety,wine_type,sweetness,whisky_type,age_statement,beer_type,pack_size,product_format,gin_style,flavour,abv,stock,low_stock_threshold,image_url,gallery_urls,price,category_id,is_active,categories(name)')
+      .order('name')
+      .order('id')
+      .range(from, from + ADMIN_PRODUCT_PAGE_SIZE - 1);
+    if (error) return { data: products, error };
+    const page = (data || []) as unknown as Product[];
+    products.push(...page);
+    if (page.length < ADMIN_PRODUCT_PAGE_SIZE) return { data: products, error: null };
+  }
+}
 
 function safeSupabaseError(cause: unknown) {
   if (!cause || typeof cause !== 'object') return cause instanceof Error ? cause.message : String(cause || 'Unknown error');
@@ -68,7 +85,7 @@ export default function AdminPage() {
     if (!supabase || !allowed) return;
     try {
       const [p, c, b, content, homeSections] = await Promise.all([
-        supabase.from('products').select('id,name,slug,description,tasting_notes,pairing_suggestions,country,bottle_size,grape_variety,wine_type,sweetness,whisky_type,age_statement,beer_type,pack_size,product_format,gin_style,flavour,abv,stock,low_stock_threshold,image_url,gallery_urls,price,category_id,is_active,categories(name)').order('name'),
+        loadAllAdminProducts(supabase),
         supabase.from('categories').select('id,name,slug,image_url,is_active').order('name'),
         supabase.from('homepage_banners').select('id,title,subtitle,image_url,button_label,button_url,is_active,sort_order').order('sort_order'),
         supabase.from('store_settings').select('value').eq('key', 'site_content').maybeSingle(),

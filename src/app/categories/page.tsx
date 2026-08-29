@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { CategoryGrid } from '@/components/Site';
-import { getCategories } from '@/lib/supabase';
+import { getCategories, getProducts } from '@/lib/supabase';
+import { withStrongProductCategoryImages } from '@/lib/category-images';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const categories = await getCategories();
+  const [rawCategories, products] = await Promise.all([getCategories(), getProducts()]);
+  const categories = withStrongProductCategoryImages(rawCategories, products);
   return <main className="min-h-[60vh] bg-white">
     <section className="px-4 pt-8 text-center sm:px-6">
       <h1 className="text-3xl font-black text-brand-ink">Shop by category</h1>

@@ -3,7 +3,8 @@ import './globals.css';
 import { CartFeedback } from '@/components/CartFeedback';
 import { AgeVerification } from '@/components/AgeVerification';
 import { SiteChrome } from '@/components/SiteChrome';
-import { getProducts, getSiteContent } from '@/lib/supabase';
+import { getCategories, getProducts, getSiteContent } from '@/lib/supabase';
+import { withStrongProductCategoryImages } from '@/lib/category-images';
 import { businessGraph, DEFAULT_DESCRIPTION, JsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
 
 const baseMetadata: Metadata = {
@@ -52,7 +53,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [content, products] = await Promise.all([getSiteContent(), getProducts()]);
+  const [content, products, rawCategories] = await Promise.all([getSiteContent(), getProducts(), getCategories()]);
+  const categories = withStrongProductCategoryImages(rawCategories, products);
   return (
     <html lang="en">
       <head />
@@ -60,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AgeVerification />
         <CartFeedback />
         <JsonLd data={businessGraph([content.instagram_url || '', content.facebook_url || '', content.tiktok_url || ''], content.logo_url)} />
-        <SiteChrome content={content} products={products}>{children}</SiteChrome>
+        <SiteChrome content={content} products={products} categories={categories}>{children}</SiteChrome>
       </body>
     </html>
   );

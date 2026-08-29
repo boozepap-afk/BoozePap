@@ -28,11 +28,16 @@ function searchScore(product: DbProduct, query: string) {
   return words.reduce((score, word) => score + (name.startsWith(word) ? 10 : name.split(/\s+/).some(part => part.startsWith(word)) ? 6 : name.includes(word) ? 3 : 1), 0);
 }
 
-export function Header({ content = {}, products = [] }: { content?: SiteContent; products?: DbProduct[] }) {
+export function Header({ content = {}, products = [], categories = [] }: { content?: SiteContent; products?: DbProduct[]; categories?: DbCategory[] }) {
   const [cart, setCart] = useState<{ count: number; total: number }>({ count: 0, total: 0 }), [query, setQuery] = useState(''), [location, setLocation] = useState('Deliver to'), [menuOpen, setMenuOpen] = useState(false);
   const refresh = () => { try { const items = readCart(); setCart({ count: items.reduce((n,item) => n + Number(item.quantity || 0), 0), total: items.reduce((n,item) => n + Number(item.quantity || 0) * Number(item.price || 0), 0) }); setLocation(localStorage.getItem('chupahub-delivery-label') || 'Deliver to'); } catch { setCart({ count: 0, total: 0 }); } };
   useEffect(() => { refresh(); window.addEventListener('chupahub-cart-updated', refresh); window.addEventListener('chupahub-location-updated', refresh); return () => { window.removeEventListener('chupahub-cart-updated', refresh); window.removeEventListener('chupahub-location-updated', refresh); }; }, []);
-  const primaryLinks = [['Beer','/beer'],['Wine','/wine'],['Whisky','/whisky'],['Gin','/gin'],['Vodka','/vodka'],['Offers','/offers'],['Track Order','/track-order'],['Contact','/contact']];
+  const primaryLinks = [
+    ...categories.filter(category => !category.parent_id).map(category => [category.name, categoryCanonicalPath(category), category.image_url] as const),
+    ['Offers','/offers', undefined] as const,
+    ['Track Order','/track-order', undefined] as const,
+    ['Contact','/contact', undefined] as const,
+  ];
   const suggestions = query.trim().length < 1 ? [] : products.map(product => ({ product, score: searchScore(product, query) })).filter(result => result.score >= 0).sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name)).slice(0, 6).map(result => result.product);
   return <header className="sticky top-0 z-40 bg-[linear-gradient(110deg,#050505_0%,#11100b_58%,#4d3a08_100%)] text-white shadow-lg">
     <div className="border-b border-brand-gold/35 bg-transparent px-3 py-2 text-center text-[11px] font-bold tracking-wide text-brand-lightGold sm:flex sm:justify-between sm:px-6"><span>{content.header_notice || 'FREE DELIVERY ON ORDERS OF KES 10,000 OR MORE'}</span><span className="hidden sm:inline">Fast Nairobi delivery · Drink responsibly — 18+ only</span></div>
@@ -43,7 +48,7 @@ export function Header({ content = {}, products = [] }: { content?: SiteContent;
       <Link href="/checkout" className="hidden max-w-40 truncate text-xs font-bold text-white/80 xl:block"><MapPinIcon className="mr-1 inline text-brand-gold" size={16}/>{location}</Link>
       <div className="ml-auto flex items-center gap-4"><a href="https://wa.me/" aria-label="Contact BoozePap on WhatsApp" className="hidden sm:block"><MessageCircle/></a><Link href="/account" className="flex items-center gap-2" aria-label="Account"><UserCircle/><span className="hidden text-xs font-bold xl:inline">Account</span></Link><Link href="/wishlist" className="relative hidden sm:block" aria-label="Wishlist"><Heart/></Link><Link href="/checkout" data-cart-icon className="relative flex items-center gap-2" aria-label="Cart"><ShoppingBag/><span className="absolute -right-2 -top-2 rounded-full bg-brand-orange px-1.5 text-[10px] font-black">{cart.count}</span><span className="hidden text-xs font-black xl:inline">{money(cart.total)}</span></Link></div>
     </div>
-    <nav aria-label="Primary navigation" className={`${menuOpen?'flex':'hidden'} flex-col border-t border-brand-gold/30 bg-black/25 px-4 py-2 backdrop-blur-sm lg:flex lg:flex-row lg:items-center lg:justify-center lg:gap-8`}>{primaryLinks.map(([label,href]) => <Link onClick={()=>setMenuOpen(false)} key={href} href={href} className="border-b border-white/10 py-3 text-xs font-bold uppercase tracking-wider transition hover:text-brand-lightGold lg:border-0 lg:py-1">{label}</Link>)}</nav>
+    <nav aria-label="Primary navigation" className={`${menuOpen?'flex':'hidden'} flex-col border-t border-brand-gold/30 bg-black/25 px-4 py-2 backdrop-blur-sm lg:flex lg:flex-row lg:items-center lg:justify-start lg:gap-5 lg:overflow-x-auto`}>{primaryLinks.map(([label,href,image]) => <Link onClick={()=>setMenuOpen(false)} key={href} href={href} className="flex shrink-0 items-center gap-2 border-b border-white/10 py-3 text-xs font-bold uppercase tracking-wider transition hover:text-brand-lightGold lg:border-0 lg:py-1">{image&&<img src={image} alt="" className="h-7 w-7 rounded-full bg-white object-contain"/>}{label}</Link>)}</nav>
   </header>;
 }
 
