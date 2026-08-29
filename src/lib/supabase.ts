@@ -89,7 +89,21 @@ export async function getCheckoutSettings(): Promise<CheckoutSettings> {
 }
 
 export async function getProducts(): Promise<DbProduct[]> {
-  const products = await supabaseFetch<DbProduct>('products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&order=updated_at.desc,created_at.desc', { cache: 'no-store', resource: 'public products and relationships' });
+  // Supabase/PostgREST commonly caps a single response at 1,000 rows. Once the
+  // catalogue grew beyond that limit, the older products were still in the
+  // database but disappeared from Shop All, category pages and search because
+  // this function only fetched the first page. Page through the full catalogue
+  // so every active product remains visible.
+  const pageSize = 1000;
+  const products: DbProduct[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await supabaseFetch<DbProduct>(
+      `products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&order=updated_at.desc,created_at.desc&limit=${pageSize}&offset=${offset}`,
+      { cache: 'no-store', resource: `public products and relationships page ${Math.floor(offset / pageSize) + 1}` },
+    );
+    products.push(...page);
+    if (page.length < pageSize) break;
+  }
   console.info('[BoozePap products] Storefront fetch complete', { project: getSupabaseProjectRef(), fetched: products.length });
   return products;
 }
@@ -144,7 +158,6 @@ export function sitemapProducts(products: DbProduct[]) {
   const duplicates = new Set([...counts].filter(([, count]) => count > 1).map(([slug]) => slug));
   return products.filter(product => isSitemapProduct(product, duplicates));
 }
-
 
 export type SiteContent = {
   about?: string; privacy?: string; terms?: string; logo_url?: string; contact_phone?: string; contact_email?: string; header_notice?: string; footer_text?: string;
