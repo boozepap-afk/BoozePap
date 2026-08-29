@@ -24,8 +24,8 @@ body {
 }
 
 .brand-gradient {
-  background: linear-gradient(135deg, #FFF8F6 0%, #FBE9E7 100%);
-  color: #241A1A;
+  background: #0B0B0B;
+  color: #FFFFFF;
 }
 
 .tile-shade {
