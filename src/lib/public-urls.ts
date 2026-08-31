@@ -14,7 +14,18 @@ export const categoryCanonicalPaths: Record<string, string> = {
   liqueurs: '/liqueur',
   sparkling: '/sparkling',
   snacks: '/snacks',
+  cider: '/category/ciders',
+  ciders: '/category/ciders',
 };
+
+export const categoryDatabaseSlugs: Record<string, string> = {
+  ciders: 'cider',
+};
+
+export function categoryDatabaseSlug(slug: string) {
+  const normalized = categorySlug(slug);
+  return categoryDatabaseSlugs[normalized] || normalized;
+}
 
 export function categorySlug(category: { slug?: string | null; name?: string | null } | string) {
   const value = typeof category === 'string' ? category : category.slug || category.name;

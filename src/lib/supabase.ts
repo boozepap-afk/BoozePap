@@ -1,4 +1,5 @@
 import { categoryImageFor } from '@/lib/category-images';
+import { categoryDatabaseSlug } from '@/lib/public-urls';
 
 export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const supabasePublicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
@@ -54,7 +55,8 @@ export async function getCategories(): Promise<DbCategory[]> {
 }
 
 export async function getCategory(slug: string): Promise<DbCategory | null> {
-  const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public category' });
+  const databaseSlug = categoryDatabaseSlug(slug);
+  const rows = await supabaseFetch<DbCategory>(`categories?select=*&is_active=eq.true&slug=eq.${encodeURIComponent(databaseSlug)}&limit=1`, { cache: 'no-store', resource: 'public category' });
   return rows[0] ? { ...rows[0], image_url: categoryImageFor(rows[0]) } : null;
 }
 

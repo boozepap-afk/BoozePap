@@ -32,7 +32,7 @@ export function Header({ content = {}, products = [], categories = [] }: { conte
   const [cart, setCart] = useState<{ count: number; total: number }>({ count: 0, total: 0 }), [query, setQuery] = useState(''), [location, setLocation] = useState('Deliver to'), [menuOpen, setMenuOpen] = useState(false);
   const refresh = () => { try { const items = readCart(); setCart({ count: items.reduce((n,item) => n + Number(item.quantity || 0), 0), total: items.reduce((n,item) => n + Number(item.quantity || 0) * Number(item.price || 0), 0) }); setLocation(localStorage.getItem('chupahub-delivery-label') || 'Deliver to'); } catch { setCart({ count: 0, total: 0 }); } };
   useEffect(() => { refresh(); window.addEventListener('chupahub-cart-updated', refresh); window.addEventListener('chupahub-location-updated', refresh); return () => { window.removeEventListener('chupahub-cart-updated', refresh); window.removeEventListener('chupahub-location-updated', refresh); }; }, []);
-  const featuredCategorySlugs = ['beer', 'wine', 'whisky', 'gin', 'vodka', 'ciders', 'jinro'];
+  const featuredCategorySlugs = ['beer', 'wine', 'whisky', 'gin', 'vodka', 'cider', 'jinro'];
   const primaryLinks = [
     ...featuredCategorySlugs.map(slug => {
       const category = categories.find(item => item.slug === slug);
