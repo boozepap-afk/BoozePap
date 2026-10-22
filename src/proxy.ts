@@ -16,6 +16,12 @@ export async function proxy(request: NextRequest) {
   if (categoryDestination) return NextResponse.redirect(new URL(categoryDestination, request.url), 308);
 
   const response = NextResponse.next({ request });
+  // Catalog prices and account/cart content must not be served from a shared
+  // HTML cache. Disabling the Supabase fetch cache alone does not stop a CDN
+  // from returning an older, fully rendered page without reaching Next.js.
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  response.headers.set('CDN-Cache-Control', 'no-store');
+  response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
   if (!supabaseUrl || !supabasePublicKey) return response;
   const supabase = createClient(supabaseUrl, supabasePublicKey, {
     auth: {
