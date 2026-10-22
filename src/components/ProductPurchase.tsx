@@ -3,8 +3,10 @@
 import { useMemo, useState } from 'react';
 import { DbProduct, DbVariant, effectivePrice, money, PRODUCT_IMAGE_PLACEHOLDER } from '@/lib/supabase';
 import { readCart, writeCart } from '@/lib/cart';
+import { useLiveProduct } from '@/components/LiveCatalogPrices';
 
-export function ProductPurchase({ product, initialVariantId }: { product: DbProduct; initialVariantId?: string }) {
+export function ProductPurchase({ product: initialProduct, initialVariantId }: { product: DbProduct; initialVariantId?: string }) {
+  const product = useLiveProduct(initialProduct);
   const variants = useMemo(() => (product.product_variants || []).filter((variant) => variant.is_active !== false), [product.product_variants]);
   const [selectedId, setSelectedId] = useState(variants.some((variant) => variant.id === initialVariantId) ? initialVariantId || '' : variants[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
@@ -20,7 +22,7 @@ export function ProductPurchase({ product, initialVariantId }: { product: DbProd
     const existing = cart.find((item) => item.productId === product.id && item.variantId === selected?.id);
     const previousQuantity = existing?.quantity || 0;
     const nextQuantity = Math.min(previousQuantity + quantity, maxQuantity);
-    if (existing) existing.quantity = nextQuantity;
+    if (existing) { existing.quantity = nextQuantity; existing.price = price; }
     else cart.push({ productId: product.id, variantId: selected?.id, name: product.name, size: selected?.name, price, image, quantity: nextQuantity, stock: maxQuantity });
     const addedItem = existing || cart[cart.length - 1];
     writeCart(cart, { item: { ...addedItem }, quantityAdded: nextQuantity - previousQuantity });

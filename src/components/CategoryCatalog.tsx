@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { ProductCard, ProductVariantCard } from '@/components/Site';
 import type { DbProduct } from '@/lib/supabase';
+import { useLiveProducts } from '@/components/LiveCatalogPrices';
 
 type FacetKey = 'wine_type'|'grape_variety'|'country'|'abv'|'price'|'bottle_size'|'sweetness'|'brand'|'whisky_type'|'age_statement'|'beer_type'|'pack_size'|'product_format'|'gin_style'|'flavour';
 type Facet = { key: FacetKey; label: string };
@@ -33,7 +34,8 @@ function value(product: DbProduct, key: FacetKey) {
 }
 function matchesRange(number: number, encoded: string) { const [min,max] = encoded.split('-').map(Number); return number >= min && number < max; }
 
-export function CategoryCatalog({ title, slug, products }: { title: string; slug: string; products: DbProduct[] }) {
+export function CategoryCatalog({ title, slug, products: initialProducts }: { title: string; slug: string; products: DbProduct[] }) {
+  const products = useLiveProducts(initialProducts);
   const router = useRouter(), pathname = usePathname(), params = useSearchParams();
   const [drawer,setDrawer] = useState(false), [expanded,setExpanded] = useState<Partial<Record<FacetKey,boolean>>>({});
   const facets = configs[slug] || common;
