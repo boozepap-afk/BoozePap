@@ -20,7 +20,6 @@ export async function fetchCatalogPrices(url: string, publicKey: string, signal?
   for (let offset = 0; ; offset += pageSize) {
     const endpoint = new URL('/rest/v1/products', url);
     endpoint.searchParams.set('select', 'id,price,old_price,discount_starts_at,discount_ends_at,product_variants(*)');
-    endpoint.searchParams.set('product_variants.order', 'sort_order.asc,id.asc');
     endpoint.searchParams.set('is_active', 'eq.true');
     endpoint.searchParams.set('order', 'id.asc');
     endpoint.searchParams.set('limit', String(pageSize));

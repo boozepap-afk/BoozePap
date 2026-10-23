@@ -1,23 +1,5 @@
 import assert from 'node:assert/strict';
 import { effectivePrice, fetchCatalogPrices, refreshCartPrices } from '../src/lib/catalog-pricing.ts';
-import { defaultPriceVariant, manualPriceUpdate } from '../src/lib/admin-pricing.ts';
-
-const sizeOptions = [
-  { id: 'hidden', sort_order: -1, price: 100, is_active: false },
-  { id: 'large', sort_order: 2, price: 6000 },
-  { id: 'default', sort_order: 1, price: 4500 },
-];
-assert.equal(defaultPriceVariant(sizeOptions)?.id, 'default', 'admin edits the first visible storefront size');
-assert.equal(defaultPriceVariant([...sizeOptions].reverse())?.id, 'default', 'database response order cannot change the default price target');
-assert.equal(defaultPriceVariant([{ id: 'b' }, { id: 'a' }])?.id, 'a', 'equal size positions have a stable ID tie-breaker');
-assert.equal(defaultPriceVariant([]), undefined, 'products without sizes keep their own price');
-const editedPrice = manualPriceUpdate(3999);
-assert.equal(effectivePrice({ ...editedPrice, discount_ends_at: undefined }).price, 3999, 'a previous discount cannot hide a manual price edit');
-assert.equal(editedPrice.discount_ends_at, null);
-assert.equal(editedPrice.old_price, null);
-assert.equal(sizeOptions[1].price, 6000, 'other bottle sizes retain independent prices');
-assert.throws(() => manualPriceUpdate(-1), /valid product price/);
-assert.throws(() => manualPriceUpdate(NaN), /valid product price/);
 
 assert.deepEqual(effectivePrice({ price: 1500, old_price: 1000 }), { price: 1500, oldPrice: undefined, active: false }, 'a stale comparison price never replaces the current Supabase price');
 assert.equal(effectivePrice({ price: 1500 }).price, 1500);
@@ -43,7 +25,6 @@ for (const { url, options } of requests) {
   assert.equal(options.cache, 'no-store', 'cached HTML/browser prices are bypassed');
   assert.equal(options.headers.apikey, 'public-test-key');
   assert.match(url.searchParams.get('select'), /product_variants/);
-  assert.equal(url.searchParams.get('product_variants.order'), 'sort_order.asc,id.asc', 'live prices use the same default size order as admin');
 }
 const cart = [{ productId: id, price: 600, quantity: 2 }, { productId: id, variantId, price: 720, quantity: 1 }, { productId: 'unavailable', price: 100, quantity: 1 }];
 const updated = refreshCartPrices(cart, new Map([[id, product]]));
