@@ -100,7 +100,7 @@ export async function getProducts(): Promise<DbProduct[]> {
   const products: DbProduct[] = [];
   for (let offset = 0; ; offset += pageSize) {
     const page = await supabaseFetch<DbProduct>(
-      `products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&order=updated_at.desc,created_at.desc&limit=${pageSize}&offset=${offset}`,
+      `products?select=*,categories(name,slug),brands(name,country),product_variants(*)&product_variants.order=sort_order.asc,id.asc&is_active=eq.true&order=updated_at.desc,created_at.desc&limit=${pageSize}&offset=${offset}`,
       { cache: 'no-store', resource: `public products and relationships page ${Math.floor(offset / pageSize) + 1}` },
     );
     products.push(...page);
@@ -137,7 +137,7 @@ export async function getProductsByCategory(slug: string, categoryId?: string): 
 }
 
 export async function getProduct(slug: string): Promise<DbProduct | null> {
-  const rows = await supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public product detail' });
+  const rows = await supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&product_variants.order=sort_order.asc,id.asc&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public product detail' });
   return rows[0] || null;
 }
 
