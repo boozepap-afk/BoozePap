@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { fetchCatalogPrices, refreshCartPrices } from '../src/lib/catalog-pricing.ts';
+import { effectivePrice, fetchCatalogPrices, refreshCartPrices } from '../src/lib/catalog-pricing.ts';
+
+assert.deepEqual(effectivePrice({ price: 1500, old_price: 1000 }), { price: 1500, oldPrice: undefined, active: false }, 'a stale comparison price never replaces the current Supabase price');
+assert.equal(effectivePrice({ price: 1500 }).price, 1500);
+assert.equal(effectivePrice({ price: 1000, old_price: 1500 }).price, 1000, 'an active discount uses the Supabase sale price');
+assert.equal(effectivePrice({ price: 1000, old_price: 1500, discount_starts_at: '2999-01-01T00:00:00Z' }).price, 1500, 'future discounts retain their original price');
+assert.equal(effectivePrice({ price: 1000, old_price: 1500, discount_ends_at: '2000-01-01T00:00:00Z' }).price, 1500, 'expired discounts restore their original price');
+assert.equal(effectivePrice({ price: 0, old_price: 1000 }).price, 0, 'zero sale prices are preserved');
 
 const id = '11111111-1111-4111-8111-111111111111';
 const variantId = '22222222-2222-4222-8222-222222222222';
@@ -24,6 +31,8 @@ const updated = refreshCartPrices(cart, new Map([[id, product]]));
 assert.deepEqual(updated.map(item => item.price), [750, 900, 100]);
 assert.deepEqual(cart.map(item => item.price), [600, 720, 100], 'the original cart is not mutated');
 assert.equal(updated[0].quantity, 2);
+const raisedPrices = new Map([[id, { ...product, price: 1500, product_variants: [{ id: variantId, price: 1800, old_price: 1200 }] }]]);
+assert.deepEqual(refreshCartPrices(cart, raisedPrices).map(item => item.price), [1500, 1800, 100], 'saved product and variant prices follow Supabase price increases');
 assert.equal(refreshCartPrices(updated, new Map([[id, product]]))[0], updated[0], 'unchanged cart prices do not trigger another update');
 await assert.rejects(() => fetchCatalogPrices('https://example.supabase.co', 'public-test-key', undefined, async () => new Response('', { status: 503 })), /HTTP 503/, 'failed reads do not masquerade as an empty catalog');
 console.log('Live Supabase price reads, pagination, cache bypass, variants, and saved-cart repricing passed.');

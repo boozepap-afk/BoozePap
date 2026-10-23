@@ -6,7 +6,7 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "build:cloudflare": "node scripts/check-supabase-build.mjs && opennextjs-cloudflare build",
-    "deploy:cloudflare": "wrangler deploy"
+    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",
