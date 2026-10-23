@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { type DbProduct, supabasePublicKey, supabaseUrl } from '@/lib/supabase';
 import { fetchCatalogPrices, refreshCartPrices, type CatalogPrice } from '@/lib/catalog-pricing';
 import { readCart, writeCart } from '@/lib/cart';
+import { ADMIN_CHANGE_KEY } from '@/lib/admin-sync';
 
 const LivePrices = createContext(new Map<string, CatalogPrice>());
 
@@ -29,13 +30,16 @@ export function LiveCatalogPrices({ children }: { children: ReactNode }) {
       } finally { pending = false; }
     };
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 60_000);
+    const interval = window.setInterval(() => void refresh(), 30_000);
     const onFocus = () => void refresh();
+    const onStorage = (event: StorageEvent) => { if (event.key === ADMIN_CHANGE_KEY) void refresh(); };
     window.addEventListener('focus', onFocus);
+    window.addEventListener('storage', onStorage);
     document.addEventListener('visibilitychange', onFocus);
     return () => {
       controller.abort(); window.clearInterval(interval);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', onFocus);
     };
   }, []);

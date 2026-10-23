@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { authCookieNames, authCookieOptions, chunkAuthCookie, readChunkedAuthCookie } from './supabase-auth-storage';
 import { supabasePublicKey, supabaseUrl } from './supabase';
+import { ADMIN_CHANGE_KEY, createAdminSyncFetch } from './admin-sync';
 
 // Database types can be generated and substituted here after linking the production project.
 // Until then, authorization is enforced by Supabase RLS rather than client-side table typing.
@@ -23,6 +24,13 @@ export function createBrowserSupabase() {
   if (browserClient !== undefined) return browserClient;
   try {
     browserClient = createClient(supabaseUrl, supabasePublicKey, {
+      global: {
+        fetch: createAdminSyncFetch(
+          (...args) => fetch(...args),
+          () => typeof window !== 'undefined' && window.location.pathname.startsWith('/admin'),
+          () => window.localStorage.setItem(ADMIN_CHANGE_KEY, crypto.randomUUID()),
+        ),
+      },
       auth: {
         flowType: 'pkce',
         persistSession: true,
