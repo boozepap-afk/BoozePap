@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { categoryImageFor } from '@/lib/category-images';
 import { categoryDatabaseSlug } from '@/lib/public-urls';
 
@@ -49,10 +50,10 @@ export function getSupabaseProjectRef() {
   try { return new URL(supabaseUrl).hostname.split('.')[0] || 'unknown'; } catch { return 'invalid-url'; }
 }
 
-export async function getCategories(): Promise<DbCategory[]> {
+export const getCategories = cache(async function getCategories(): Promise<DbCategory[]> {
   const rows = await supabaseFetch<DbCategory>('categories?select=*&is_active=eq.true&order=sort_order.asc,name.asc', { cache: 'no-store', resource: 'public categories' });
   return rows.map(category => ({ ...category, image_url: categoryImageFor(category) }));
-}
+});
 
 export async function getCategory(slug: string): Promise<DbCategory | null> {
   const databaseSlug = categoryDatabaseSlug(slug);
@@ -90,7 +91,7 @@ export async function getCheckoutSettings(): Promise<CheckoutSettings> {
   return rows[0]?.value || {};
 }
 
-export async function getProducts(): Promise<DbProduct[]> {
+export const getProducts = cache(async function getProducts(): Promise<DbProduct[]> {
   // Supabase/PostgREST commonly caps a single response at 1,000 rows. Once the
   // catalogue grew beyond that limit, the older products were still in the
   // database but disappeared from Shop All, category pages and search because
@@ -108,7 +109,7 @@ export async function getProducts(): Promise<DbProduct[]> {
   }
   console.info('[BoozePap products] Storefront fetch complete', { project: getSupabaseProjectRef(), fetched: products.length });
   return products;
-}
+});
 
 export async function getHomepageSections(): Promise<DbHomepageSection[]> {
   return supabaseFetch<DbHomepageSection>('homepage_product_sections?select=id,heading,category_id,product_ids,use_best_sellers,item_limit,sort_order,rotation_enabled,destination_url,is_active&is_active=eq.true&order=sort_order.asc', { cache: 'no-store', resource: 'public homepage product sections' });
@@ -136,10 +137,10 @@ export async function getProductsByCategory(slug: string, categoryId?: string): 
   return products.filter(product => product.category_id === id || product.categories?.slug === slug);
 }
 
-export async function getProduct(slug: string): Promise<DbProduct | null> {
+export const getProduct = cache(async function getProduct(slug: string): Promise<DbProduct | null> {
   const rows = await supabaseFetch<DbProduct>(`products?select=*,categories(name,slug),brands(name,country),product_variants(*)&is_active=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`, { cache: 'no-store', resource: 'public product detail' });
   return rows[0] || null;
-}
+});
 
 const testProductSlugs = new Set(['jospeh', 'jose-b', 'jose']);
 const validPublicSlug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -182,10 +183,10 @@ function customerFacingBoozePapContent(content: SiteContent): SiteContent {
   };
 }
 
-export async function getSiteContent(): Promise<SiteContent> {
+export const getSiteContent = cache(async function getSiteContent(): Promise<SiteContent> {
   const rows = await supabaseFetch<{ value: SiteContent }>('store_settings?select=value&key=eq.site_content&is_public=eq.true&limit=1', { cache: 'no-store', resource: 'public website settings' });
   return customerFacingBoozePapContent(rows[0]?.value || {});
-}
+});
 
 export const money = (value: number) => `KES ${Number(value).toLocaleString('en-KE')}`;
 export { effectivePrice } from './catalog-pricing';

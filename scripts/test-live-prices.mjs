@@ -24,7 +24,9 @@ for (const { url, options } of requests) {
   assert.equal(url.pathname, '/rest/v1/products');
   assert.equal(options.cache, 'no-store', 'cached HTML/browser prices are bypassed');
   assert.equal(options.headers.apikey, 'public-test-key');
-  assert.match(url.searchParams.get('select'), /product_variants/);
+  assert.match(url.searchParams.get('select'), /(?:^|,)stock(?:,|$)/, 'live product inventory accompanies prices');
+  assert.match(url.searchParams.get('select'), /product_variants\([^)]*stock/);
+  assert.doesNotMatch(url.searchParams.get('select'), /\*/, 'poll only the fields needed for live prices and inventory');
 }
 const cart = [{ productId: id, price: 600, quantity: 2 }, { productId: id, variantId, price: 720, quantity: 1 }, { productId: 'unavailable', price: 100, quantity: 1 }];
 const updated = refreshCartPrices(cart, new Map([[id, product]]));

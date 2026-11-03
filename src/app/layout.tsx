@@ -55,6 +55,17 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [content, products, rawCategories] = await Promise.all([getSiteContent(), getProducts(), getCategories()]);
   const categories = withStrongProductCategoryImages(rawCategories, products);
+  // Header search needs identifiers, searchable text, images and prices only.
+  // Do not serialize galleries, tasting notes or variant metadata on every route.
+  const searchProducts = products.map(product => ({
+    id: product.id, name: product.name, slug: product.slug,
+    description: product.description, bottle_size: product.bottle_size,
+    image_url: product.image_url || product.gallery_urls?.[0], price: product.price,
+    categories: product.categories, brands: product.brands,
+    product_variants: product.product_variants?.map(variant => ({
+      id: variant.id, name: variant.name, price: variant.price, stock: variant.stock,
+    })),
+  }));
   return (
     <html lang="en">
       <head />
@@ -62,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AgeVerification />
         <CartFeedback />
         <JsonLd data={businessGraph([content.instagram_url || '', content.facebook_url || '', content.tiktok_url || ''], content.logo_url)} />
-        <SiteChrome content={content} products={products} categories={categories}>{children}</SiteChrome>
+        <SiteChrome content={content} products={searchProducts} categories={categories}>{children}</SiteChrome>
       </body>
     </html>
   );

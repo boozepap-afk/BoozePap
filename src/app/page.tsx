@@ -41,7 +41,7 @@ export default async function Home() {
       : section.use_best_sellers
       ? (topSelling.length ? topSelling : flaggedTopSelling.length ? flaggedTopSelling : products)
       : manualProducts;
-    return { title: section.heading, products: selected, href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
+    return { title: section.heading, products: selected.slice(0, section.item_limit), href: category ? categoryCanonicalPath(category) : section.destination_url || '/shop', limit: section.item_limit };
   });
   const promotionHref = (promotion: typeof promotions[number]) => promotion.button_url || '/offers';
 

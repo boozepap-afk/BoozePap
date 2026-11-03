@@ -22,7 +22,10 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
   response.headers.set('CDN-Cache-Control', 'no-store');
   response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
-  if (!supabaseUrl || !supabasePublicKey) return response;
+  // Anonymous browsing needs no session validation. Protected handlers still
+  // verify the user and admin role independently.
+  const hasSession = request.cookies.getAll().some(cookie => /^sb-.*-auth-token(?:\.\d+)?$/.test(cookie.name));
+  if (!hasSession || !supabaseUrl || !supabasePublicKey) return response;
   const supabase = createClient(supabaseUrl, supabasePublicKey, {
     auth: {
       flowType: 'pkce',

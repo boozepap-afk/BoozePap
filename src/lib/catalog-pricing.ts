@@ -1,7 +1,7 @@
 import type { DbProduct } from './supabase';
 import type { CartItem } from './cart';
 
-export type CatalogPrice = Pick<DbProduct, 'id' | 'price' | 'old_price' | 'discount_starts_at' | 'discount_ends_at' | 'product_variants'>;
+export type CatalogPrice = Pick<DbProduct, 'id' | 'price' | 'old_price' | 'discount_starts_at' | 'discount_ends_at' | 'stock' | 'product_variants'>;
 
 export function effectivePrice(item: { price: number; old_price?: number; discount_starts_at?: string; discount_ends_at?: string }) {
   const now = Date.now();
@@ -19,7 +19,7 @@ export async function fetchCatalogPrices(url: string, publicKey: string, signal?
   const pageSize = 1000;
   for (let offset = 0; ; offset += pageSize) {
     const endpoint = new URL('/rest/v1/products', url);
-    endpoint.searchParams.set('select', 'id,price,old_price,discount_starts_at,discount_ends_at,product_variants(*)');
+    endpoint.searchParams.set('select', 'id,price,old_price,discount_starts_at,discount_ends_at,stock,product_variants(id,name,price,old_price,discount_starts_at,discount_ends_at,discount_label,stock,is_active,image_url)');
     endpoint.searchParams.set('is_active', 'eq.true');
     endpoint.searchParams.set('order', 'id.asc');
     endpoint.searchParams.set('limit', String(pageSize));
