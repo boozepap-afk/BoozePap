@@ -25,7 +25,8 @@ export async function proxy(request: NextRequest) {
   // Anonymous browsing needs no session validation. Protected handlers still
   // verify the user and admin role independently.
   const hasSession = request.cookies.getAll().some(cookie => /^sb-.*-auth-token(?:\.\d+)?$/.test(cookie.name));
-  if (!hasSession || !supabaseUrl || !supabasePublicKey) return response;
+  const sessionRoute = /^\/(?:account|admin|checkout|auth)(?:\/|$)/.test(request.nextUrl.pathname);
+  if (!sessionRoute || !hasSession || !supabaseUrl || !supabasePublicKey) return response;
   const supabase = createClient(supabaseUrl, supabasePublicKey, {
     auth: {
       flowType: 'pkce',

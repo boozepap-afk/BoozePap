@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { readCatalog } from './catalog-reader';
 import { categoryImageFor } from '@/lib/category-images';
 import { categoryDatabaseSlug } from '@/lib/public-urls';
 
@@ -125,16 +126,31 @@ export async function getTopSellingProductIds(limit = 24): Promise<string[]> {
   return rows.map(row => row.product_id);
 }
 
-export async function getProductsByCategory(slug: string, categoryId?: string): Promise<DbProduct[]> {
-  // Use the exact same public result as Shop All, then filter it locally. This
-  // avoids PostgREST relationship/filter differences hiding correctly assigned
-  // products while retaining the category saved on the product row.
-  const [products, category] = await Promise.all([
-    getProducts(),
-    categoryId ? Promise.resolve(null) : getCategory(slug),
-  ]);
+export const getCatalogProducts = cache(async function getCatalogProducts(categoryId?: string, limit?: number): Promise<DbProduct[]> {
+  return readCatalog(supabaseUrl, supabasePublicKey, { categoryId, limit });
+});
+
+export async function getProductsByCategory(slug: string, categoryId?: string, limit?: number): Promise<DbProduct[]> {
+  const category = categoryId ? null : await getCategory(slug);
   const id = categoryId || category?.id;
-  return products.filter(product => product.category_id === id || product.categories?.slug === slug);
+  // Filter the product's own category_id, not an embedded PostgREST join.
+  return id ? getCatalogProducts(id, limit) : [];
+}
+
+export async function getHomepageProducts(sections: DbHomepageSection[], topSellingIds: string[]): Promise<DbProduct[]> {
+  const ids = [...new Set([...sections.flatMap(section => section.product_ids || []), ...topSellingIds])];
+  const selected: DbProduct[] = [];
+  // Keep URLs bounded for long admin selections; never read unrelated products.
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    selected.push(...await readCatalog(supabaseUrl, supabasePublicKey, { ids: ids.slice(offset, offset + 100) }));
+  }
+  if (sections.some(section => !section.category_id && section.use_best_sellers) && !topSellingIds.length) {
+    let fallback = await readCatalog(supabaseUrl, supabasePublicKey, { featured: true, limit: 24 });
+    if (!fallback.length) fallback = await getCatalogProducts(undefined, 24);
+    const known = new Set(selected.map(product => product.id));
+    selected.push(...fallback.filter(product => !known.has(product.id)));
+  }
+  return selected;
 }
 
 export const getProduct = cache(async function getProduct(slug: string): Promise<DbProduct | null> {

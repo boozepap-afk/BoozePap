@@ -14,26 +14,33 @@ export function effectivePrice(item: { price: number; old_price?: number; discou
   return { price: hasDiscount && !active ? oldPrice! : price, oldPrice: active ? oldPrice : undefined, active };
 }
 
-export async function fetchCatalogPrices(url: string, publicKey: string, signal?: AbortSignal, fetcher: typeof fetch = fetch): Promise<CatalogPrice[]> {
+export async function fetchCatalogPrices(url: string, publicKey: string, signal?: AbortSignal, fetcher: typeof fetch = fetch, productIds?: readonly string[]): Promise<CatalogPrice[]> {
   const prices: CatalogPrice[] = [];
   const pageSize = 1000;
-  for (let offset = 0; ; offset += pageSize) {
-    const endpoint = new URL('/rest/v1/products', url);
-    endpoint.searchParams.set('select', 'id,price,old_price,discount_starts_at,discount_ends_at,stock,product_variants(id,name,price,old_price,discount_starts_at,discount_ends_at,discount_label,stock,is_active,image_url)');
-    endpoint.searchParams.set('is_active', 'eq.true');
-    endpoint.searchParams.set('order', 'id.asc');
-    endpoint.searchParams.set('limit', String(pageSize));
-    endpoint.searchParams.set('offset', String(offset));
-    const response = await fetcher(endpoint, {
-      headers: { apikey: publicKey, Authorization: `Bearer ${publicKey}` },
-      cache: 'no-store', signal,
-    });
-    if (!response.ok) throw new Error(`Live catalog prices returned HTTP ${response.status}`);
-    const page = await response.json() as CatalogPrice[];
-    if (!Array.isArray(page)) throw new Error('Invalid live catalog prices response');
-    prices.push(...page);
-    if (page.length < pageSize) return prices;
+  const ids = productIds === undefined ? undefined : [...new Set(productIds)].filter(id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+  const groups: (string[] | undefined)[] = ids === undefined ? [undefined] : [];
+  if (ids) for (let index = 0; index < ids.length; index += 100) groups.push(ids.slice(index, index + 100));
+  for (const group of groups) {
+    for (let offset = 0; ; offset += pageSize) {
+      const endpoint = new URL('/rest/v1/products', url);
+      endpoint.searchParams.set('select', 'id,price,old_price,discount_starts_at,discount_ends_at,stock,product_variants(id,name,price,old_price,discount_starts_at,discount_ends_at,discount_label,stock,low_stock_threshold,is_active,image_url)');
+      endpoint.searchParams.set('is_active', 'eq.true');
+      if (group) endpoint.searchParams.set('id', `in.(${group.join(',')})`);
+      endpoint.searchParams.set('order', 'id.asc');
+      endpoint.searchParams.set('limit', String(pageSize));
+      endpoint.searchParams.set('offset', String(offset));
+      const response = await fetcher(endpoint, {
+        headers: { apikey: publicKey, Authorization: `Bearer ${publicKey}` },
+        cache: 'no-store', signal,
+      });
+      if (!response.ok) throw new Error(`Live catalog prices returned HTTP ${response.status}`);
+      const page = await response.json() as CatalogPrice[];
+      if (!Array.isArray(page)) throw new Error('Invalid live catalog prices response');
+      prices.push(...page);
+      if (group || page.length < pageSize) break;
+    }
   }
+  return prices;
 }
 
 export function refreshCartPrices(items: CartItem[], prices: Map<string, CatalogPrice>): CartItem[] {

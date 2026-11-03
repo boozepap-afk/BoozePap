@@ -31,4 +31,4 @@ export const seoPages: Record<string, SeoPage> = {
 };
 
 export function pageMetadata(page: SeoPage): Metadata { return { title: page.title, description: page.description, alternates: { canonical: page.path }, openGraph: { title: `${page.title} | BoozePap`, description: page.description, url: page.path, type: 'website' }, twitter: { card: 'summary', title: `${page.title} | BoozePap`, description: page.description } }; }
-export function collectionSchema(page: SeoPage, itemCount: number) { return { '@context': 'https://schema.org', '@type': 'CollectionPage', name: page.heading, description: page.description, url: absoluteUrl(page.path), numberOfItems: itemCount, isPartOf: { '@id': `${absoluteUrl('/')}#website` } }; }
+export function collectionSchema(page: SeoPage, itemCount?: number) { return { '@context': 'https://schema.org', '@type': 'CollectionPage', name: page.heading, description: page.description, url: absoluteUrl(page.path), numberOfItems: itemCount, isPartOf: { '@id': `${absoluteUrl('/')}#website` } }; }

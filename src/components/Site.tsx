@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Heart, MapPin as MapPinIcon, Menu, MessageCircle, Search, ShoppingBag, UserCircle, X } from 'lucide-react';
-import { DbCategory, DbProduct, effectivePrice, imageFor, money, SiteContent } from '@/lib/supabase';
+import { DbCategory, DbProduct, effectivePrice, imageFor, money, SiteContent, supabaseUrl, supabasePublicKey } from '@/lib/supabase';
 import { categoryImageFor } from '@/lib/category-images';
 import { categoryCanonicalPath } from '@/lib/public-urls';
 import { readCart, writeCart } from '@/lib/cart';
+import { readCatalog } from '@/lib/catalog-reader';
 import { BrandLogo } from '@/components/BrandLogo';
 import { SmartImage } from '@/components/SmartImage';
 import { useLiveProduct, useLiveProducts } from '@/components/LiveCatalogPrices';
@@ -29,11 +30,28 @@ function searchScore(product: DbProduct, query: string) {
   return words.reduce((score, word) => score + (name.startsWith(word) ? 10 : name.split(/\s+/).some(part => part.startsWith(word)) ? 6 : name.includes(word) ? 3 : 1), 0);
 }
 
-export function Header({ content = {}, products: initialProducts = [], categories = [] }: { content?: SiteContent; products?: DbProduct[]; categories?: DbCategory[] }) {
-  const products = useLiveProducts(initialProducts);
+export function Header({ content = {}, categories = [] }: { content?: SiteContent; categories?: DbCategory[] }) {
+  const [searchProducts, setSearchProducts] = useState<DbProduct[]>([]);
+  const [searchLoaded, setSearchLoaded] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
+  const products = useLiveProducts(searchProducts);
   const [cart, setCart] = useState<{ count: number; total: number }>({ count: 0, total: 0 }), [query, setQuery] = useState(''), [location, setLocation] = useState('Deliver to'), [menuOpen, setMenuOpen] = useState(false);
   const refresh = () => { try { const items = readCart(); setCart({ count: items.reduce((n,item) => n + Number(item.quantity || 0), 0), total: items.reduce((n,item) => n + Number(item.quantity || 0) * Number(item.price || 0), 0) }); setLocation(localStorage.getItem('chupahub-delivery-label') || 'Deliver to'); } catch { setCart({ count: 0, total: 0 }); } };
   useEffect(() => { refresh(); window.addEventListener('chupahub-cart-updated', refresh); window.addEventListener('chupahub-location-updated', refresh); return () => { window.removeEventListener('chupahub-cart-updated', refresh); window.removeEventListener('chupahub-location-updated', refresh); }; }, []);
+  const searching = query.trim().length > 0;
+  useEffect(() => {
+    if (!searching || searchLoaded || !supabaseUrl || !supabasePublicKey) return;
+    const controller = new AbortController();
+    // Load the search index only when someone searches, directly from Supabase.
+    // Ordinary page requests never fetch or serialize the entire catalogue.
+    const timer = window.setTimeout(() => {
+      setSearchFailed(false);
+      readCatalog(supabaseUrl, supabasePublicKey, { search: true }, controller.signal)
+        .then(rows => { setSearchProducts(rows); setSearchLoaded(true); })
+        .catch(() => { if (!controller.signal.aborted) setSearchFailed(true); });
+    }, 250);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [searching, searchLoaded]);
   const featuredCategorySlugs = ['beer', 'wine', 'whisky', 'gin', 'vodka', 'cider', 'jinro'];
   const primaryLinks = [
     ...featuredCategorySlugs.map(slug => {
@@ -51,7 +69,7 @@ export function Header({ content = {}, products: initialProducts = [], categorie
     <div className="flex w-full flex-wrap items-center gap-3 px-3 py-2 sm:px-6">
       <button type="button" onClick={()=>setMenuOpen(value=>!value)} className="grid h-10 w-10 place-items-center rounded-lg border border-white/20 lg:hidden" aria-label="Toggle navigation">{menuOpen?<X size={21}/>:<Menu size={21}/>}</button>
       <BrandLogo src={content.logo_url} />
-      <div className="relative order-4 w-full lg:order-none lg:mx-5 lg:flex-1"><Search className="absolute left-4 top-3 text-brand-deep" size={20}/><input value={query} onChange={e=>setQuery(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white py-2.5 pl-11 pr-4 text-sm text-brand-ink outline-none ring-brand-gold focus:ring-2" placeholder="Search wines, spirits, beers and brands" aria-label="Search products"/>{suggestions.length > 0 && <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-neutral-200 bg-white text-brand-ink shadow-card">{suggestions.map(p => <Link prefetch={false} key={p.id} href={`/product/${p.slug}`} onClick={()=>setQuery('')} className="flex items-center gap-3 p-3 hover:bg-brand-soft"><img src={imageFor(p)} alt="" className="h-10 w-10 object-contain"/><span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><small>{p.bottle_size || p.product_variants?.[0]?.name || 'Select size'} · {money(p.product_variants?.[0]?.price ?? p.price)}</small></span></Link>)}<Link href={`/category/all?q=${encodeURIComponent(query)}`} className="block border-t p-3 text-sm font-black text-brand-deep">View all results</Link></div>}</div>
+      <div className="relative order-4 w-full lg:order-none lg:mx-5 lg:flex-1"><Search className="absolute left-4 top-3 text-brand-deep" size={20}/><input value={query} onChange={e=>setQuery(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white py-2.5 pl-11 pr-4 text-sm text-brand-ink outline-none ring-brand-gold focus:ring-2" placeholder="Search wines, spirits, beers and brands" aria-label="Search products"/>{searching && <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-neutral-200 bg-white text-brand-ink shadow-card">{!searchLoaded && <p role="status" className="p-3 text-sm">{searchFailed ? 'Search is unavailable. Try again shortly.' : 'Loading search…'}</p>}{suggestions.map(p => <Link prefetch={false} key={p.id} href={`/product/${p.slug}`} onClick={()=>setQuery('')} className="flex items-center gap-3 p-3 hover:bg-brand-soft"><img src={imageFor(p)} alt="" className="h-10 w-10 object-contain"/><span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><small>{p.bottle_size || p.product_variants?.[0]?.name || 'Select size'} · {money(p.product_variants?.[0]?.price ?? p.price)}</small></span></Link>)}<Link href={`/search?q=${encodeURIComponent(query)}`} className="block border-t p-3 text-sm font-black text-brand-deep">View all results</Link></div>}</div>
       <Link href="/checkout" className="hidden max-w-40 truncate text-xs font-bold text-white/80 xl:block"><MapPinIcon className="mr-1 inline text-brand-gold" size={16}/>{location}</Link>
       <div className="ml-auto flex items-center gap-4"><a href="https://wa.me/" aria-label="Contact BoozePap on WhatsApp" className="hidden sm:block"><MessageCircle/></a><Link href="/account" className="flex items-center gap-2" aria-label="Account"><UserCircle/><span className="hidden text-xs font-bold xl:inline">Account</span></Link><Link href="/wishlist" className="relative hidden sm:block" aria-label="Wishlist"><Heart/></Link><Link href="/checkout" data-cart-icon className="relative flex items-center gap-2" aria-label="Cart"><ShoppingBag/><span className="absolute -right-2 -top-2 rounded-full bg-brand-orange px-1.5 text-[10px] font-black">{cart.count}</span><span className="hidden text-xs font-black xl:inline">{money(cart.total)}</span></Link></div>
     </div>

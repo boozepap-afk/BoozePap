@@ -38,3 +38,21 @@ assert.deepEqual(refreshCartPrices(cart, raisedPrices).map(item => item.price), 
 assert.equal(refreshCartPrices(updated, new Map([[id, product]]))[0], updated[0], 'unchanged cart prices do not trigger another update');
 await assert.rejects(() => fetchCatalogPrices('https://example.supabase.co', 'public-test-key', undefined, async () => new Response('', { status: 503 })), /HTTP 503/, 'failed reads do not masquerade as an empty catalog');
 console.log('Live Supabase price reads, pagination, cache bypass, variants, and saved-cart repricing passed.');
+
+const scopedRequests = [];
+const scope = Array.from({ length: 205 }, (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`);
+const scopedFetch = async (endpoint, options) => {
+  scopedRequests.push(endpoint);
+  assert.equal(options.cache, 'no-store');
+  return Response.json(endpoint.searchParams.get('id').slice(4, -1).split(',').map(id => ({ id, price: 1234, stock: 6 })));
+};
+const scopedPrices = await fetchCatalogPrices('https://example.supabase.co', 'key', undefined, scopedFetch, [...scope, scope[0], 'invalid)']);
+assert.equal(scopedRequests.length, 3, 'large scopes use batches of at most 100 IDs');
+assert.equal(scopedPrices.length, 205, 'duplicates and malformed IDs are excluded');
+assert.equal(scopedPrices.at(-1).stock, 6);
+assert.equal(scopedPrices.at(-1).price, 1234);
+assert.deepEqual(scopedPrices.map(row => row.id), scope, 'only watched/cart products are polled');
+scopedRequests.length = 0;
+assert.deepEqual(await fetchCatalogPrices('https://example.supabase.co', 'key', undefined, scopedFetch, []), []);
+assert.equal(scopedRequests.length, 0, 'pages without products or a cart do no background catalogue reads');
+console.log('Scoped live price/stock polling, batching and empty-page bypass passed.');

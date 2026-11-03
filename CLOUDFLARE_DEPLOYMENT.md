@@ -29,3 +29,36 @@ Validate a prepared Worker bundle without uploading with
 prices match Supabase and that `scripts/test-live-prices.mjs` passes with
 `node --experimental-strip-types scripts/test-live-prices.mjs` locally.
 Do not rerun the price increase migration to refresh the website.
+
+## Storefront CPU budget
+
+The shared layout must not load the product catalogue. Header search loads its
+index only on interaction. Homepage data is selected by configured product IDs;
+product recommendations are limited to nine candidates. Shop/category SSR reads
+only 24 products. The remaining catalogue is fetched directly from Supabase in
+the browser, with explicit loading/error/retry states. The card grid initially
+renders 24 offerings and exposes the rest through Show more. Facet changes use
+native history updates rather than requesting another server render.
+
+Price and stock polling remains uncached and is scoped to products used by the
+page and saved cart, in batches of at most 100 IDs. Public navigation does not
+refresh authentication; account/admin/checkout/auth routes still refresh cookie
+sessions, and protected handlers continue to validate access independently.
+Checkout quote/order validation remains authoritative; no HTML or price cache
+was added. All product sizes remain available.
+
+Run the large-catalogue regression check with
+`node scripts/test-storefront-workload.mjs` from the repository root. It starts
+Next.js and a local PostgREST fixture with 1,500 products, then uses headless
+Chromium (default `/usr/bin/chromium`, override with `CHROMIUM_PATH`) to verify
+bounded requests/cards, pagination, local sorting, scoped polling, live stock,
+and cart repricing. It also grows the fixture to 10,000 products and checks
+eight concurrent homepage requests. It never writes to the production database. Also run
+`node scripts/test-catalog-reader.mjs`, the existing checkout/live-price/admin
+tests, and `npm run typecheck`. Use `npm run build -- --webpack` when this
+machine's Turbopack port-binding restriction prevents the standard build.
+
+These tests establish workload bounds, not production Worker CPU measurements.
+After Cloudflare deploys the commit, compare p95/p99 CPU time and CPU-limit
+errors per request under comparable traffic. A successful build does not prove
+Error 1102 has stopped. Public Supabase build/runtime variables must remain set.

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { CategoryCatalog } from '@/components/CategoryCatalog';
-import { getCategories, getCategory, getProducts, getProductsByCategory } from '@/lib/supabase';
+import { StorefrontCatalog } from '@/components/StorefrontCatalog';
+import { getCategories, getCategory, getCatalogProducts, getProductsByCategory } from '@/lib/supabase';
 import { absoluteUrl, breadcrumbSchema, JsonLd, plainText, truncate } from '@/lib/seo';
 import { categoryCanonicalPath, categorySlug } from '@/lib/public-urls';
 
@@ -30,12 +30,12 @@ export default async function Category({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const category = slug === 'all' ? null : await getCategory(slug);
   if (slug !== 'all' && !category) notFound();
-  const list = slug === 'all' ? await getProducts() : await getProductsByCategory(slug, category!.id);
+  const list = slug === 'all' ? await getCatalogProducts(undefined, 24) : await getProductsByCategory(slug, category!.id, 24);
   const title = slug === 'all' ? 'All Products' : category?.name || slug.replaceAll('-', ' ');
   return <>
-    <JsonLd data={[{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: absoluteUrl(categoryCanonicalPath(slug)), numberOfItems: list.length }, breadcrumbSchema([{ name: 'Home', url: '/' }, { name: title, url: categoryCanonicalPath(slug) }])]} />
+    <JsonLd data={[{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: absoluteUrl(categoryCanonicalPath(slug)) }, breadcrumbSchema([{ name: 'Home', url: '/' }, { name: title, url: categoryCanonicalPath(slug) }])]} />
     <Suspense fallback={<CategoryCatalogFallback title={title} count={list.length}/>}>
-      <CategoryCatalog title={title} slug={slug} products={list}/>
+      <StorefrontCatalog key={slug} title={title} slug={slug} categoryId={category?.id} initialProducts={list}/>
     </Suspense>
   </>;
 }

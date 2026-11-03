@@ -2,13 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import type { DbCategory, DbProduct, SiteContent } from '@/lib/supabase';
+import type { DbCategory, SiteContent } from '@/lib/supabase';
 import { Footer, Header } from '@/components/Site';
 import { LiveCatalogPrices } from '@/components/LiveCatalogPrices';
 import { LiveStorefrontUpdates } from '@/components/LiveStorefrontUpdates';
 
-export function SiteChrome({ children, content, products, categories }: { children: ReactNode; content: SiteContent; products: DbProduct[]; categories: DbCategory[] }) {
+export function SiteChrome({ children, content, categories }: { children: ReactNode; content: SiteContent; categories: DbCategory[] }) {
   const pathname = usePathname();
   if (pathname.startsWith('/admin')) return children;
-  return <LiveCatalogPrices><LiveStorefrontUpdates/><Header content={content} products={products} categories={categories} />{children}<Footer content={content} /></LiveCatalogPrices>;
+  return <LiveCatalogPrices><LiveStorefrontUpdates/><Header content={content} categories={categories} />{children}<Footer content={content} /></LiveCatalogPrices>;
 }

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Journal, ProductRail, SeoArticle } from '@/components/Site';
 import { HeroCarousel } from '@/components/HeroCarousel';
-import { getBanners, getCategories, getHomepageSections, getProducts, getPromotions, getSiteContent, getTopSellingProductIds, money } from '@/lib/supabase';
+import { getBanners, getCategories, getHomepageSections, getHomepageProducts, getPromotions, getSiteContent, getTopSellingProductIds, money } from '@/lib/supabase';
 import { categoryCanonicalPath, categorySlug } from '@/lib/public-urls';
 import { DEFAULT_DESCRIPTION } from '@/lib/seo';
 import { withStrongProductCategoryImages } from '@/lib/category-images';
@@ -18,15 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [categories, banners, products, promotions, content, configuredSections, topSellingIds] = await Promise.all([
-    getCategories(), getBanners(), getProducts(), getPromotions(), getSiteContent(), getHomepageSections(), getTopSellingProductIds(24),
+  const [categories, banners, promotions, content, configuredSections, topSellingIds] = await Promise.all([
+    getCategories(), getBanners(), getPromotions(), getSiteContent(), getHomepageSections(), getTopSellingProductIds(24),
   ]);
+  const products = await getHomepageProducts(configuredSections, topSellingIds);
+  const productById = new Map(products.map(product => [product.id, product]));
   const displayCategories = withStrongProductCategoryImages(categories, products);
-  const topSelling = topSellingIds.map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
+  const topSelling = topSellingIds.map(id => productById.get(id)).filter((product): product is typeof products[number] => Boolean(product));
   const flaggedTopSelling = products.filter(product => product.is_top_seller || product.is_featured);
   const sections = configuredSections.map(section => {
     const category = categories.find(item => item.id === section.category_id);
-    const manualProducts = (section.product_ids || []).map(id => products.find(product => product.id === id)).filter((product): product is typeof products[number] => Boolean(product));
+    const manualProducts = (section.product_ids || []).map(id => productById.get(id)).filter((product): product is typeof products[number] => Boolean(product));
     // Category rows show only the products explicitly selected in admin. The
     // category controls which products are valid and where View all leads.
     const selectedCategoryProducts = category ? manualProducts.filter(product =>
