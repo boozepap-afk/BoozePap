@@ -67,7 +67,7 @@ const port = portServer.address().port;
 await new Promise(resolve => portServer.close(resolve));
 const logPath = join(mkdtempSync(join(tmpdir(), 'boozepap-workload-')), 'next.log');
 const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', String(port)], {
-  env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${database.address().port}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: 'fixture-public-key', NEXT_TELEMETRY_DISABLED: '1' },
+  env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${database.address().port}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: 'fixture-public-key', NEXT_TELEMETRY_DISABLED: '1', ...(process.env.BOOZEPAP_TEST_MAPS === '1' ? { NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'fixture-browser-maps-key' } : {}) },
   stdio: ['ignore', openSync(logPath, 'w'), 'ignore'],
 });
 try {
@@ -147,6 +147,7 @@ try {
       return result.result.value;
     };
     await cdp('Runtime.enable');
+    await cdp('Page.enable');
     await cdp('Page.navigate', { url: `http://127.0.0.1:${port}/gin` });
     await waitFor(() => evaluate(`document.querySelectorAll('button[aria-label^="Add Fixture drink"]').length === 24`), '24 hydrated cards');
     await waitFor(() => evaluate(`document.querySelector('main')?.textContent.includes('300 products')`), 'all category products load in browser');
@@ -170,6 +171,41 @@ try {
     products[0].stock = 0;
     await evaluate(`localStorage.setItem('boozepap-cart-version', '2'); localStorage.setItem('boozepap-cart-v2', JSON.stringify([{productId: '${products[0].id}', price: 1000, quantity: 1}])); window.dispatchEvent(new Event('focus'))`);
     await waitFor(() => evaluate(`document.querySelector('button[aria-label="Add Fixture drink 0 to cart"]')?.disabled && JSON.parse(localStorage.getItem('boozepap-cart-v2'))[0].price === 9999`), 'live stock and cart repricing');
+    if (process.env.BOOZEPAP_TEST_MAPS === '1') {
+      await cdp('Page.addScriptToEvaluateOnNewDocument', { runImmediately: true, source: `
+        window.__mapLibraries = [];
+        window.__mapFailures = 1;
+        const place = {
+          id: 'fixture-place', displayName: 'Yaya Centre', formattedAddress: 'Yaya Centre, Nairobi, Kenya',
+          location: {lat: () => -1.293053, lng: () => 36.787758}, fetchFields: async () => ({})
+        };
+        const places = {
+          AutocompleteSessionToken: class {},
+          AutocompleteSuggestion: {fetchAutocompleteSuggestions: async () => ({suggestions: [{placePrediction: {
+            placeId: 'fixture-place', text: {toString: () => 'Yaya Centre, Nairobi'}, toPlace: () => place
+          }}]})}
+        };
+        window.google = {maps: {places, importLibrary: async name => {
+          window.__mapLibraries.push(name);
+          if (name !== 'places') throw new Error('Map preview deliberately unavailable');
+          if (window.__mapFailures-- > 0) throw new Error('The Google Maps JavaScript API could not load.');
+          return places;
+        }}};
+      ` });
+      await evaluate(`localStorage.setItem('boozepap-cart-v2', JSON.stringify([{productId: '${products[2].id}', name: 'Fixture drink 2', price: 1002, stock: 20, quantity: 1}])); localStorage.removeItem('chupahub-checkout-draft')`);
+      await cdp('Page.navigate', { url: `http://127.0.0.1:${port}/checkout` });
+      await waitFor(() => evaluate(`Array.from(document.querySelectorAll('button')).some(button => button.textContent === 'Retry address lookup')`), 'transient Maps failure exposes retry');
+      await evaluate(`Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Retry address lookup').click()`);
+      await waitFor(() => evaluate(`Array.from(document.querySelectorAll('[role="status"]')).some(element => element.textContent.startsWith('Address suggestions are available.'))`), 'Places recovers after retry');
+      assert.ok(await evaluate(`window.__mapLibraries.every(name => name === 'places')`), 'search does not depend on maps, markers or geocoding');
+      assert.ok(await evaluate(`performance.getEntriesByType('resource').some(entry => entry.name.includes('/api/maps/config'))`), 'browser requests runtime configuration');
+      await evaluate(`(() => { const input = document.querySelector('[role="combobox"]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Yaya'); input.dispatchEvent(new Event('input', {bubbles: true})); input.focus(); })()`);
+      await waitFor(() => evaluate(`Boolean(document.querySelector('[role="option"]'))`), 'autocomplete suggestions appear');
+      await evaluate(`document.querySelector('[role="option"]').click()`);
+      await waitFor(() => evaluate(`document.body.textContent.includes('map preview could not load') && JSON.parse(localStorage.getItem('chupahub-checkout-draft') || '{}').coordinates?.verified === true`), 'map preview failure retains the verified address');
+      assert.equal(await evaluate(`JSON.parse(localStorage.getItem('chupahub-checkout-draft')).coordinates.placeId`), 'fixture-place');
+      console.log('Chromium Maps: runtime configuration, transient-load retry, autocomplete and verified-address retention when preview fails passed.');
+    }
     assert.deepEqual(browserErrors, [], 'browser hydration must not throw');
     console.log('Chromium: hydration, 24→48 cards, local sorting without SSR, scoped polling, live stock and cart repricing passed.');
   } finally {

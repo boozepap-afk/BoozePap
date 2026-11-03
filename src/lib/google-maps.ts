@@ -6,7 +6,8 @@ export type GoogleMapsLoadErrorCode =
   | 'missing-key'
   | 'authentication'
   | 'places-unavailable'
-  | 'script-load';
+  | 'script-load'
+  | 'configuration-load';
 
 export class GoogleMapsLoadError extends Error {
   constructor(public readonly code: GoogleMapsLoadErrorCode, message: string, options?: ErrorOptions) {
@@ -16,16 +17,17 @@ export class GoogleMapsLoadError extends Error {
 }
 
 let mapsPromise: Promise<void> | undefined;
+let loaderConfigured = false;
 
 function logMapsError(error: GoogleMapsLoadError) {
   if (error.code === 'missing-key') {
-    console.error('[Google Maps] Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Add it to the deployment environment and rebuild/redeploy the Next.js application.');
+    console.error('[Google Maps] Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Set the public browser key in Cloudflare Worker runtime variables.');
     return;
   }
 
   if (error.code === 'authentication') {
     console.error(
-      '[Google Maps] Authentication failed. Check that the API key is valid, billing is enabled, Maps JavaScript API and Places API (New) are enabled, and HTTP referer restrictions allow localhost, the Vercel preview URL, boozepap.com, and www.boozepap.com.',
+      '[Google Maps] Authentication failed. Check that the API key is valid, billing is enabled, Maps JavaScript API and Places API (New) are enabled, and HTTP referer restrictions allow the intended BoozePap production domain and approved development/preview domains.',
       error,
     );
     return;
@@ -42,7 +44,24 @@ function logMapsError(error: GoogleMapsLoadError) {
   );
 }
 
-/** Loads Google Maps once, in the browser, with every checkout library preloaded. */
+async function browserMapsKey() {
+  const compiledKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
+  try {
+    const response = await fetch('/api/maps/config', { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    if (response.ok) {
+      const config = await response.json() as { apiKey?: string };
+      if (typeof config.apiKey === 'string' && config.apiKey.trim()) return config.apiKey.trim();
+    }
+    if (!compiledKey && response.status === 503) throw new GoogleMapsLoadError('missing-key', 'The Google Maps browser key is not configured.');
+  } catch (cause) {
+    if (cause instanceof GoogleMapsLoadError) throw cause;
+    if (!compiledKey) throw new GoogleMapsLoadError('configuration-load', 'Could not load address lookup configuration.', { cause });
+  }
+  if (compiledKey) return compiledKey;
+  throw new GoogleMapsLoadError('missing-key', 'The Google Maps browser key is not configured.');
+}
+
+/** Address search needs Places only. Load maps/geocoding when actually used. */
 export function loadGoogleMaps(): Promise<void> {
   if (mapsPromise) return mapsPromise;
 
@@ -51,8 +70,7 @@ export function loadGoogleMaps(): Promise<void> {
       throw new GoogleMapsLoadError('script-load', 'Google Maps can only be loaded in a browser.');
     }
 
-    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!key) throw new GoogleMapsLoadError('missing-key', 'The Google Maps environment variable is missing.');
+    const key = await browserMapsKey();
 
     let authenticationFailed = false;
     const previousAuthFailure = window.gm_authFailure;
@@ -62,15 +80,13 @@ export function loadGoogleMaps(): Promise<void> {
     };
 
     // setOptions installs one shared dynamic loader; the promise above prevents duplicate setup/scripts.
-    setOptions({ key, v: 'weekly', libraries: ['maps', 'places', 'marker', 'geocoding'] });
+    if (!loaderConfigured) {
+      setOptions({ key, v: 'weekly', language: 'en', region: 'KE' });
+      loaderConfigured = true;
+    }
 
     try {
-      await Promise.all([
-        importLibrary('maps'),
-        importLibrary('places'),
-        importLibrary('marker'),
-        importLibrary('geocoding'),
-      ]);
+      await importLibrary('places');
 
       if (authenticationFailed) {
         throw new GoogleMapsLoadError('authentication', 'Google Maps rejected the configured API key.');
@@ -94,6 +110,7 @@ export function loadGoogleMaps(): Promise<void> {
     const error = cause instanceof GoogleMapsLoadError
       ? cause
       : new GoogleMapsLoadError('script-load', 'The Google Maps JavaScript API script could not be loaded.', { cause });
+    mapsPromise = undefined; // A transient failure must not poison every later attempt.
     logMapsError(error);
     throw error;
   });

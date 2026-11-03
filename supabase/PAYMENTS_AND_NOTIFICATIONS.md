@@ -41,4 +41,21 @@ No SMS, WhatsApp, or email credentials are included in this repository. Until a 
 
 ## Google Maps delivery search
 
-Create a browser API key in Google Cloud Console and enable **Maps JavaScript API**, **Places API (New)**, and **Geocoding API**. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Vercel. Restrict the key to HTTP referrers for the exact BoozePap production domain, approved Vercel preview domains, and `http://localhost:3000/*` only when developing. Apply API restrictions so the key can call only those three APIs. The key is intentionally browser-visible; its referrer and API restrictions are mandatory. Checkout stores the selected Google Place ID, place name, formatted address, coordinates, and verification state. Manual fallback orders are visibly stored as unverified.
+Create a browser API key in Google Cloud Console and enable **Maps JavaScript API**, **Places API (New)**, and **Geocoding API**. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in the **boozepap Cloudflare Worker runtime variables**. The same-origin `/api/maps/config` endpoint reads that public browser key at runtime, so a runtime-only configuration works without baking the key into a build. A build-time public key remains a fallback. The endpoint never returns server-only Maps or Routes keys. Restrict the key to HTTP referrers for the exact BoozePap production domain, explicitly approved preview domains, and `http://localhost:3000/*` only when developing. Apply API restrictions so the key can call only those three APIs. The key is intentionally browser-visible; its referrer and API restrictions are mandatory. Checkout stores the selected Google Place ID, place name, formatted address, coordinates, and verification state. Manual fallback orders are visibly stored as unverified.
+
+Autocomplete loads Places independently; maps/markers and reverse geocoding load
+only when used. A map-preview failure does not invalidate a selected Place. The
+retry button retries transient loader failures. If Google rejects the key, inspect
+the browser console for the original Google error and check billing, API
+enablement and referrer restrictions. If an external CSP is configured in
+Cloudflare, retain the policy and explicitly permit the required Google Maps
+script/connect/image hosts; this application does not add a permissive CSP.
+
+Run `node scripts/test-google-maps.mjs` and
+`BOOZEPAP_TEST_MAPS=1 node scripts/test-storefront-workload.mjs` for deterministic
+configuration, retry and checkout interaction checks. Google services are mocked
+in these tests; they do not establish production key authorization.
+
+After a production build, run `node scripts/test-google-maps-runtime.mjs` to
+verify that a public key supplied only at server startup is available from the
+configuration endpoint. This uses a dummy key locally and never calls Google.
