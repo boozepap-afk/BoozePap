@@ -19,6 +19,8 @@ const products = Array.from({ length: 1500 }, (_, index) => ({
   product_variants: index === 1 ? [{ id: '33333333-3333-4333-8333-333333333333', name: 'Large bottle', price: 2000, stock: 5, is_active: true }, { id: '44444444-4444-4444-8444-444444444444', name: 'Small bottle', price: 1500, stock: 4, is_active: true }] : [], updated_at: '2026-01-01T00:00:00Z',
 }));
 const requests = [];
+const legacySchema = process.env.BOOZEPAP_TEST_LEGACY_SCHEMA === '1';
+const isProductRead = url => url.pathname === '/rest/v1/products' && !(legacySchema && url.searchParams.get('select')?.includes('grape_variety'));
 const database = createServer((request, response) => {
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Headers', 'apikey, authorization, content-type');
@@ -27,6 +29,11 @@ const database = createServer((request, response) => {
   requests.push(url);
   let rows = [];
   if (url.pathname === '/rest/v1/products') {
+    if (legacySchema && url.searchParams.get('select')?.includes('grape_variety')) {
+      response.writeHead(400, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ code: '42703', message: 'column products.grape_variety does not exist' }));
+      return;
+    }
     rows = products;
     if (url.searchParams.has('category_id')) rows = rows.filter(product => product.category_id === url.searchParams.get('category_id').slice(3));
     if (url.searchParams.has('slug')) rows = rows.filter(product => product.slug === url.searchParams.get('slug').slice(3));
@@ -76,7 +83,7 @@ try {
     const response = await fetch(`http://127.0.0.1:${port}${path}`, { signal: AbortSignal.timeout(120000) });
     const html = await response.text();
     assert.equal(response.status, 200, `${path} renders`);
-    const reads = requests.filter(url => url.pathname === '/rest/v1/products');
+    const reads = requests.filter(isProductRead);
     const cards = (html.match(/aria-label="Add Fixture drink /g) || []).length;
     if (path === '/checkout' || path === '/admin') assert.equal(reads.length, 0, `${path} must not load a catalogue`);
     if (path === '/') {
@@ -103,7 +110,7 @@ try {
       assert.equal(cards, 24, 'shop render is bounded independently of catalogue size');
       assert.ok(!html.includes('fixture-drink-1499'), 'offscreen catalogue is not serialized into HTML');
     }
-    console.log(`${path}: ${reads.length} product requests, ${cards} cards, ${Buffer.byteLength(html)} HTML bytes`);
+    console.log(`${path}: ${reads.length} successful product reads (${requests.filter(url => url.pathname === '/rest/v1/products').length} HTTP requests), ${cards} cards, ${Buffer.byteLength(html)} HTML bytes`);
   }
   assert.ok(!requests.some(url => url.pathname.startsWith('/auth/')), 'anonymous requests need no auth calls');
   // Exercise hydration and interactions in real Chromium through its native CDP.
@@ -179,14 +186,14 @@ try {
   assert.equal(largeShop.status, 200);
   assert.equal((largeHtml.match(/aria-label="Add Fixture drink /g) || []).length, 24);
   assert.ok(Buffer.byteLength(largeHtml) < 130000, '10,000 products must not inflate the initial Shop payload');
-  assert.equal(requests.filter(url => url.pathname === '/rest/v1/products').length, 1);
+  assert.equal(requests.filter(isProductRead).length, 1);
   requests.length = 0;
   const concurrent = await Promise.all(Array.from({ length: 8 }, () => fetch(`http://127.0.0.1:${port}/`).then(async response => ({ status: response.status, html: await response.text() }))));
   assert.ok(concurrent.every(result => result.status === 200 && Buffer.byteLength(result.html) < 100000));
-  assert.equal(requests.filter(url => url.pathname === '/rest/v1/products').length, 8, 'eight concurrent visits need only eight selected-product reads');
-  assert.ok(requests.filter(url => url.pathname === '/rest/v1/products').every(url => url.searchParams.has('id')));
+  assert.equal(requests.filter(isProductRead).length, 8, 'eight concurrent visits need only eight selected-product reads');
+  assert.ok(requests.filter(isProductRead).every(url => url.searchParams.has('id')));
   console.log(`10,000-product Shop: ${Buffer.byteLength(largeHtml)} HTML bytes, 24 cards; eight concurrent homepage visits passed with one selected-product query each.`);
-  console.log('Large-catalogue request scoping, pagination and bounded server rendering passed.');
+  console.log(`Large-catalogue request scoping, pagination and bounded server rendering passed (${legacySchema ? 'legacy schema with missing optional columns' : 'current schema'}).`);
 } catch (error) {
   console.error(readFileSync(logPath, 'utf8').slice(-8000));
   throw error;

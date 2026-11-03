@@ -62,3 +62,9 @@ These tests establish workload bounds, not production Worker CPU measurements.
 After Cloudflare deploys the commit, compare p95/p99 CPU time and CPU-limit
 errors per request under comparable traffic. A successful build does not prove
 Error 1102 has stopped. Public Supabase build/runtime variables must remain set.
+
+To exercise a Supabase schema missing optional merchandising columns, run
+`BOOZEPAP_TEST_LEGACY_SCHEMA=1 node scripts/test-storefront-workload.mjs`.
+The reader retries missing-column errors once with a compatible selection and
+strips rich content before returning listing data. Authentication and policy
+failures remain errors; compatibility must not mask them.
